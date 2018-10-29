@@ -1,0 +1,119 @@
+# P2P-DFS protocol
+
+    Client --> MServer --> Snode
+
+## Links
+
+1. Client --> MServer
+
+    a. Allocate SNode
+
+    ```
+    C: "client"
+    C: "allocate"
+    C: Number of Chunks
+    C: hash1
+    C: hash2
+    ...
+    C: hashn
+    MS: SNodeIP1 token/ERR0
+    ...
+    MS: SNodeIPn token/ERR0
+    MS: close
+    ```
+
+    b. Get Snode
+
+    ```
+    C: "client"
+    C: "get"
+    C: hash
+    MS: SNodeIP/ERR1
+    MS: close
+    ```
+
+2. Client --> SNode
+
+    a. Upload File
+
+    ```
+    C: "client"
+    C: "upload"
+    C: hash
+    C: token
+    C: file_data
+    SN: Ack
+    ```
+    This is followed by a duplication step which corresponds to snode uploaded request
+
+    b. Get File
+
+    ```
+    C: "client"
+    C: "get"
+    C: hash
+    SN: "OK"/ERR1
+    SN: file_data
+    C: Ack
+    ```
+
+3. SNode --> MServer
+
+    a. Add Me
+
+    ```
+    SN: "snode"
+    SN: "add"
+    SN: size
+    MS: Ack
+    ```
+
+    b. Drop Me
+
+    ```
+    SN: "snode"
+    SN: "drop"
+    ```
+
+    c. File uploaded by X
+    ```
+    SN: "snode"
+    SN: "uploaded"
+    SN: hash
+    SN: size_of_chunk
+    MS: SNodeIP1 token/ERR0
+    ...
+    MS: SNodeIPk token/ERR0
+    ```
+
+    d. File duplicated
+    ```
+    SN: "snode"
+    SN: "duplicated"
+    SN: hash
+    SN: size_of_chunk
+    ```
+
+4. MServer --> SNode
+
+    a. Expect token x
+    ```
+    MS: "mserver expect token"
+    ```
+
+5. SNode --> SNode
+
+    a. Upload chunk for duplication
+    ```
+    SN1: "snode"
+    SN1: "upload"
+    SN1: hash
+    SN1: token
+    SN1: file_data
+    SN2: Ack
+    ```
+
+## Errors
+
+1. "ERR0": No storage space available on any snodes
+2. "ERR1": hash is not available on the server
