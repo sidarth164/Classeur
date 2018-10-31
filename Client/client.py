@@ -1,4 +1,3 @@
-# client.py
 import socket
 import os
 import hashlib
@@ -61,7 +60,13 @@ class Files:
 def upload_chunk(snode, hash, chunk):
     sock = socket.socket()
     sock.connect((snode[0], snode_port))
-    upload = "client upload " + hash + " " + snode[1] + "\n" + chunk
+    upload={}
+    upload["source"]="client"
+    upload["purpose"]="upload"
+    upload["hash"]=hash
+    upload["destSnodeAddr"]=snode[1]
+    upload=json.dumps(upload)
+    # upload = "client upload " + hash + " " + snode[1] + "\n" + chunk
     sock.send(upload)
     sock.close()
 
@@ -89,7 +94,15 @@ def get_chunk(snode, hash):
     except:
         print("Unable to connect to Snode")
         return
-    sock.send("client get " + hash + "\n")
+
+    query={}
+    query["source"]="client"
+    query["purpose"]="get"
+    query["hash"]=hash
+    query=json.dumps(query)
+    sock.send(query)
+
+    # sock.send("client get " + hash + "\n")
     reply = sock.recv(1024)
 
     if reply.startswith("OK"):

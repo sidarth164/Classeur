@@ -1,5 +1,6 @@
 import SocketServer
 import socket
+import json
 from uuid import uuid4
 
 snode_port = 8081
@@ -78,24 +79,29 @@ class MServerHandler(SocketServer.StreamRequestHandler):
 
     def handle(self):
         data = self.rfile.readline().strip()
+        request = json.loads(data)
         print "{} wrote:".format(self.client_address[0])
-        print data
+        print request
 
-        if data.startswith("snode"):
-            if data.startswith("add", 6):
+        # if data.startswith("snode"):
+        if request["source"]=="snode":
+            # if data.startswith("add", 6):
+            if request["purpose"]=="add":
                 self.wfile.write("added")
                 size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.add_node(self.client_address[0], size)
                 print("SNode {} added".format(self.client_address[0]))
                 return
 
-            elif data.startswith("drop", 6):
+            # elif data.startswith("drop", 6):
+            elif request["purpose"]=="drop":
                 size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.delete_node(self.client_address[0])
                 storageData.remove_node(self.client_address[0])
                 print("SNode {} dropped".format(self.client_address[0]))
 
-            elif data.startswith("uploaded", 6):
+            # elif data.startswith("uploaded", 6):
+            elif request["purpose"]=="uploaded":
                 chunk_size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.increment_size(self.client_address[0], chunk_size)
                 hash = data.split()[2]
@@ -104,33 +110,54 @@ class MServerHandler(SocketServer.StreamRequestHandler):
                 self.wfile.write(result)
                 sock = socket.socket()
                 sock.connect((addr, snode_port))
-                sock.send("mserver expect " + token + "\n")
+                
+                query = {}
+                query["source"] = "mserver"
+                query["purpose"] = "expect"
+                query["token"] = token
+                query = json.dumps(query)
+                sock.send(query)
+                # sock.send("mserver expect " + token + "\n")
                 sock.close()
 
-            elif data.startswith("duplicated", 6):
+            # elif data.startswith("duplicated", 6):
+            elif request["purpose"]=="duplicated":
                 chunk_size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.increment_size(self.client_address[0], chunk_size)
 
             else:
                 print("Wrong Request")
 
-        elif data.startswith("client"):
-            if data.startswith("allocate", 7):
-                numChunks = [int(s) for s in data.split() if s.isdigit()][0]
-                hashes = data.split(" ")[3:]
+        # elif data.startswith("client"):
+        elif request["source"]=="client":
+            if request["purpose"]=="allocate":
+            # if data.startswith("allocate", 7):
+                numChunks = request["numChunks"]
+                # numChunks = [int(s) for s in data.split() if s.isdigit()][0]
+                hashes = request["hashes"]
+                # hashes = data.split(" ")[3:]
                 result = ""
                 for hash in hashes:
                     addr, token = storageData.allocate_node(hash)
                     result = result + "{} ".format(addr) + token + " "
                     sock = socket.socket()
                     sock.connect((addr,snode_port))
-                    sock.send("mserver expect " + token + "\n")
+
+                    query = {}
+                    query["source"] = "mserver"
+                    query["purpose"] = "expect"
+                    query["token"] = token
+                    query = json.dumps(query)
+                    sock.send(query)
+                    # sock.send("mserver expect " + token + "\n")
                     sock.close()
                 self.wfile.write(result)
                 return
 
-            elif data.startswith("get", 7):
-                hash = data.split(" ")[2]
+            # elif data.startswith("get", 7):
+            elif request["purpose"]=="get":
+                hash = request["hash"]
+                # hash = data.split(" ")[2]
                 result = "{}".format(storageData.get_node(hash))
                 if result:
                     self.wfile.write(result)

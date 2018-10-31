@@ -1,6 +1,7 @@
 import os
 import socket
 import sys
+import json
 import SocketServer
 
 size = 4*1024*1024
@@ -10,21 +11,34 @@ expected_tokens = []
 def upload_chunk(snode, hash, chunk):
     sock = socket.socket()
     sock.connect((snode[0], snode_port))
-    upload = "snode upload " + hash + " " + snode[1] + "\n" + chunk
+
+
+    upload={}
+    upload["source"]="snode"
+    upload["purpose"]="upload"
+    upload["hash"]="hash"
+    upload["destSnodeAddr"]=snode[1]
+    upload["chunk"]=chunk
+    # upload = "snode upload " + hash + " " + snode[1] + "\n" + chunk
     sock.send(upload)
     sock.close()
 
 class SNodeHandler(SocketServer.StreamRequestHandler):
 
     def handle(self):
-        data = self.rfile.readline().strip()
+        # data = self.rfile.readline().strip()
+        repsonse = json.loads(data)
         print "{} wrote:".format(self.client_address[0])
-        print data
+        print response
 
-        if data.startswith("client"):
-            if data.startswith("upload", 7):
-                hash = data.split(" ")[2]
-                token = data.split(" ")[3]
+        # if data.startswith("client"):
+        if repsonse["source"]=="client":   
+            # if data.startswith("upload", 7):
+            if repsonse["purpose"]=="upload":
+                # hash = data.split(" ")[2] 
+                hash=response["hash"]
+                # token = data.split(" ")[3] 
+                token=response["token"]
                 if token not in expected_tokens:
                     print("Request with wrong token")
                     return
@@ -40,15 +54,27 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                 sock.connect((mserver_host, mserver_port))
                 file.close()
                 filesize = os.path.getsize("./storage/" + hash)
-                sock.send("snode uploaded " + hash + " " + str(filesize) + "\n")
+                
+                query={}
+                query["source"]="snode"
+                query["purpose"]="uploaded"
+                query["hash"]=hash
+                query["filesize"]="filesize"
+                query=json.dumps(query)
+
+                sock.send(query)
+
+                # sock.send("snode uploaded " + hash + " " + str(filesize) + "\n")
                 file = open("./storage/" + hash, 'r')
                 chunk = file.read()
                 data = ''
-                reply = sock.recv(1024)
+                reply = sock.recv(1024)         #this reply contains the list of snodes where the given chunk can be uploaded
                 while reply:
                     data += reply
                     reply = sock.recv(1024)
                 sock.close()
+
+                #The part below needs to be modified for granular and random distribution of chunks to other snodes
 
                 # Upload duplicated to other SNodes
                 data = data.split(" ")
@@ -62,8 +88,10 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                     upload_chunk(snode, hash, chunk)
                 return
 
-            elif data.startswith("get", 7):
-                hash = data.split(" ")[2]
+            # elif data.startswith("get", 7):
+            elif repsonse["purpose"]=="get":
+                hash = response["hash"]
+                # hash = data.split(" ")[2]
                 try:
                     file = open("./storage/" + hash, 'r')
                     data = file.read()
@@ -76,15 +104,22 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
             else:
                 print("Wrong Request")
 
-        elif data.startswith("mserver"):
-            if data.startswith("expect", 8):
-                token = data.split(" ")[2]
+        # elif data.startswith("mserver"):
+        elif repsonse["source"]=="mserver":
+            # if data.startswith("expect", 8):
+            if response["purpose"]=="expect":
+                token=response["token"]
+                # token = data.split(" ")[2]
                 expected_tokens.append(token)
 
-        elif data.startswith("snode"):
-            if data.startswith("upload", 6):
-                hash = data.split(" ")[2]
-                token = data.split(" ")[3]
+        # elif data.startswith("snode"):
+        elif repsonse["source"]=="snode":
+            # if data.startswith("upload", 6):
+            if response["purpose"]=="upload":
+                hash=response["hash"]
+                # hash = data.split(" ")[2]
+                token = response["token"]
+                # token = data.split(" ")[3]
                 if token not in expected_tokens:
                     print("Request with wrong token")
                     return
@@ -100,7 +135,17 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                 sock.connect((mserver_host, mserver_port))
                 file.close()
                 filesize = os.path.getsize("./storage/" + hash)
-                sock.send("snode duplicated " + hash + " " + str(filesize) + "\n")
+
+                query={}
+                query["source"]="snode"
+                query["purpose"]="duplicated"
+                query["hash"]=hash
+                query["filesize"]="filesize"
+                query=json.dumps(query)
+
+                sock.send(query) 
+
+                # sock.send("snode duplicated " + hash + " " + str(filesize) + "\n")
                 sock.close()
 
         else:
@@ -121,7 +166,15 @@ if __name__ == "__main__":
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((mserver_host, mserver_port))
-    sock.send("snode add " + str(size) + "\n")
+    
+    query={}
+    query["source"]="snode"
+    query["purpose"]="add"
+    query["storageSpace"]=size
+    query=json.dumps(query)
+
+    sock.send(query)
+    # sock.send("snode add " + str(size) + "\n")
     received = sock.recv(8)
     if "added" not in received:
         sys.exit(1)
@@ -141,7 +194,15 @@ if __name__ == "__main__":
     except:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((mserver_host, mserver_port))
-        sock.send("snode drop " + str(size) + "\n")
+
+        query={}
+        query["source"]="snode"
+        query["purpose"]="drop"
+        query["storageSpace"]=size
+        query=json.dumps(query)
+
+        sock.send(query)
+        # sock.send("snode drop " + str(size) + "\n")
         sock.close()
 
 
