@@ -5,6 +5,7 @@ import hashlib
 import sys
 from itertools import cycle
 import pickle
+import json
 
 CHUNK_SIZE=64*1024               #chunk size = 64KB
 mserver_host = 'localhost'
@@ -70,7 +71,12 @@ def get_chunk_snode(hash):
         sock.connect((mserver_host, mserver_port))
     except:
         print("Unable to connect to Main server")
-    sock.send("client get " + hash + "\n")
+    query={}
+    query["source"]="client"
+    query["purpose"]="get"
+    query["hash"]=hash
+    query=json.dumps(query)
+    sock.send(query)
     snode = sock.recv(1024)
     if snode.startswith("ERR1"):
         return None;
@@ -102,28 +108,39 @@ def get_chunk(snode, hash):
 
 def allocate_snodes(hashes):
     """ query to the MServer """
-    query = "client allocate " + str(len(hashes))
+    #query = "client allocate " + str(len(hashes))
+    # Creating query
+    query = {}
+    query["source"]="client"
+    query["purpose"]="allocate"
+    query["chunk_count"]=len(hashes)
+    query["chunks"]=[]
     for hash in hashes:
-        query += " " + hash
+        # query += " " + hash
+        query["chunks"].append(hash)
+    query = json.dumps(query)
 
     sock = socket.socket()
     try:
         sock.connect((mserver_host, mserver_port))
     except:
         print("Unable to connect to Main server")
-    sock.send(query + "\n")
+    # sock.send(query + "\n")
+    sock.send(query)
 
     data = ''
     reply = sock.recv(1024)
     while reply:
         data += reply
         reply = sock.recv(1024)
-    data = data.split(" ")
-    index = 0
-    snode_ips = []
-    while index < len(data)-1:
-        snode_ips += [(data[index], data[index+1])]
-        index += 2
+    data = json.loads(data)
+    snode_ips = data["snodes"]
+    # data = data.split(" ")
+    # index = 0
+    # snode_ips = []
+    # while index < len(data)-1:
+    #     snode_ips += [(data[index], data[index+1])]
+    #     index += 2
     sock.close()
     return snode_ips
 
