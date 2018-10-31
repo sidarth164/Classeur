@@ -111,7 +111,12 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass
 
 if __name__ == "__main__":
-    mserver_host = '172.27.27.128'
+
+    if (len(sys.argv) < 2):
+        print("Usage %s MainServerIP" % sys.argv[0])
+        sys.exit(0)
+
+    mserver_host = sys.argv[1]
     mserver_port = 8080
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
