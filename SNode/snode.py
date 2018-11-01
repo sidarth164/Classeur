@@ -20,13 +20,14 @@ def upload_chunk(snode, hash, chunk):
     upload["token"]=snode[1]
     upload["chunk"]=chunk
     # upload = "snode upload " + hash + " " + snode[1] + "\n" + chunk
-    sock.send(upload)
+    sock.send(upload + "\n")
     sock.close()
 
 class SNodeHandler(SocketServer.StreamRequestHandler):
 
     def handle(self):
         data = self.rfile.readline().strip()
+        print data
         repsonse = json.loads(data)
         print "{} wrote:".format(self.client_address[0])
         print response
@@ -62,7 +63,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                 query["filesize"]=filesize
                 query=json.dumps(query)
 
-                sock.send(query)
+                sock.send(query + "\n")
 
                 # sock.send("snode uploaded " + hash + " " + str(filesize) + "\n")
                 file = open("./storage/" + hash, 'r')
@@ -145,7 +146,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                 query["filesize"]=filesize
                 query=json.dumps(query)
 
-                sock.send(query) 
+                sock.send(query + "\n") 
 
                 # sock.send("snode duplicated " + hash + " " + str(filesize) + "\n")
                 sock.close()
@@ -168,20 +169,24 @@ if __name__ == "__main__":
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((mserver_host, mserver_port))
-    
+    print "Connected to mserver"
     query={}
     query["source"]="snode"
     query["purpose"]="add"
     query["storageSpace"]=size
     query=json.dumps(query)
 
-    sock.send(query)
+    sock.send(query + "\n")
+    print "query sent"
     # sock.send("snode add " + str(size) + "\n")
     received = sock.recv(8)
+
+    print("received: %s" % received)
     if "added" not in received:
         sys.exit(1)
     sock.close()
 
+    print "you reached till here!"
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     HOST, PORT = s.getsockname()[0], 8081
@@ -203,7 +208,7 @@ if __name__ == "__main__":
         query["storageSpace"]=size
         query=json.dumps(query)
 
-        sock.send(query)
+        sock.send(query + "\n")
         # sock.send("snode drop " + str(size) + "\n")
         sock.close()
 

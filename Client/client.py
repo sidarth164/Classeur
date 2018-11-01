@@ -67,7 +67,7 @@ def upload_chunk(snode, hash, chunk):
     upload["destSnodeAddr"]=snode[1]
     upload=json.dumps(upload)
     # upload = "client upload " + hash + " " + snode[1] + "\n" + chunk
-    sock.send(upload)
+    sock.send(upload + "\n")
     sock.close()
 
 def get_chunk_snode(hash):
@@ -81,7 +81,7 @@ def get_chunk_snode(hash):
     query["purpose"]="get"
     query["hash"]=hash
     query=json.dumps(query)
-    sock.send(query)
+    sock.send(query + "\n")
     snode = sock.recv(1024)
     if snode.startswith("ERR1"):
         return None;
@@ -100,7 +100,7 @@ def get_chunk(snode, hash):
     query["purpose"]="get"
     query["hash"]=hash
     query=json.dumps(query)
-    sock.send(query)
+    sock.send(query + "\n")
 
     # sock.send("client get " + hash + "\n")
     reply = sock.recv(1024)
@@ -139,7 +139,7 @@ def allocate_snodes(hashes):
     except:
         print("Unable to connect to Main server")
     # sock.send(query + "\n")
-    sock.send(query)
+    sock.send(query + "\n")
 
     data = ''
     reply = sock.recv(1024)

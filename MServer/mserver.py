@@ -120,7 +120,7 @@ class MServerHandler(SocketServer.StreamRequestHandler):
                 query["purpose"] = "expect"
                 query["token"] = token
                 query = json.dumps(query)
-                sock.send(query)
+                sock.send(query + "\n")
                 # sock.send("mserver expect " + token + "\n")
                 sock.close()
 
@@ -153,7 +153,7 @@ class MServerHandler(SocketServer.StreamRequestHandler):
                     query["purpose"] = "expect"
                     query["token"] = token
                     query = json.dumps(query)
-                    sock.send(query)
+                    sock.send(query + "\n")
                     # sock.send("mserver expect " + token + "\n")
                     sock.close()
                 self.wfile.write(result)
