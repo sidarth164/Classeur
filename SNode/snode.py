@@ -17,7 +17,7 @@ def upload_chunk(snode, hash, chunk):
     upload["source"]="snode"
     upload["purpose"]="upload"
     upload["hash"]="hash"
-    upload["destSnodeAddr"]=snode[1]
+    upload["token"]=snode[1]
     upload["chunk"]=chunk
     # upload = "snode upload " + hash + " " + snode[1] + "\n" + chunk
     sock.send(upload)
@@ -26,7 +26,7 @@ def upload_chunk(snode, hash, chunk):
 class SNodeHandler(SocketServer.StreamRequestHandler):
 
     def handle(self):
-        # data = self.rfile.readline().strip()
+        data = self.rfile.readline().strip()
         repsonse = json.loads(data)
         print "{} wrote:".format(self.client_address[0])
         print response
@@ -59,7 +59,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                 query["source"]="snode"
                 query["purpose"]="uploaded"
                 query["hash"]=hash
-                query["filesize"]="filesize"
+                query["filesize"]=filesize
                 query=json.dumps(query)
 
                 sock.send(query)
@@ -125,6 +125,8 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                     return
                 expected_tokens.remove(token)
                 file = open("./storage/" + hash, 'wb')
+
+                #this part needs to be checked because of the conversion of the strings to json
                 data = self.rfile.read(1024)
                 while data:
                     file.write(data)
@@ -140,7 +142,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
                 query["source"]="snode"
                 query["purpose"]="duplicated"
                 query["hash"]=hash
-                query["filesize"]="filesize"
+                query["filesize"]=filesize
                 query=json.dumps(query)
 
                 sock.send(query) 

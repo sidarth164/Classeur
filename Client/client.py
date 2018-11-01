@@ -127,10 +127,10 @@ def allocate_snodes(hashes):
     query["source"]="client"
     query["purpose"]="allocate"
     query["chunk_count"]=len(hashes)
-    query["chunks"]=[]
+    query["hashes"]=[]
     for hash in hashes:
         # query += " " + hash
-        query["chunks"].append(hash)
+        query["hashes"].append(hash)
     query = json.dumps(query)
 
     sock = socket.socket()

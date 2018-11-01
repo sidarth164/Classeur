@@ -14,7 +14,7 @@ class SNode:
 class SNodeList:
 
     def __init__(self):
-        self.snodes = {}
+        self.snodes = {}        #dictionary of storage nodes ip addresses
         self.index = -1
 
     def add_node(self, addr, size):
@@ -88,23 +88,27 @@ class MServerHandler(SocketServer.StreamRequestHandler):
             # if data.startswith("add", 6):
             if request["purpose"]=="add":
                 self.wfile.write("added")
-                size = [int(s) for s in data.split() if s.isdigit()][0]
+                size = request["storageSpace"]
+                # size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.add_node(self.client_address[0], size)
                 print("SNode {} added".format(self.client_address[0]))
                 return
 
             # elif data.startswith("drop", 6):
             elif request["purpose"]=="drop":
-                size = [int(s) for s in data.split() if s.isdigit()][0]
+                size = request["storageSpace"]
+                # size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.delete_node(self.client_address[0])
                 storageData.remove_node(self.client_address[0])
                 print("SNode {} dropped".format(self.client_address[0]))
 
             # elif data.startswith("uploaded", 6):
             elif request["purpose"]=="uploaded":
-                chunk_size = [int(s) for s in data.split() if s.isdigit()][0]
+                chunk_size = request["filesize"]
+                # chunk_size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.increment_size(self.client_address[0], chunk_size)
-                hash = data.split()[2]
+                hash = request["hash"]
+                # hash = data.split()[2]
                 addr, token = storageData.allocate_node(hash, avoid=self.client_address[0])
                 result = "{} ".format(addr) + token
                 self.wfile.write(result)
@@ -122,7 +126,8 @@ class MServerHandler(SocketServer.StreamRequestHandler):
 
             # elif data.startswith("duplicated", 6):
             elif request["purpose"]=="duplicated":
-                chunk_size = [int(s) for s in data.split() if s.isdigit()][0]
+                chunk_size = request["filesize"]
+                # chunk_size = [int(s) for s in data.split() if s.isdigit()][0]
                 snodeList.increment_size(self.client_address[0], chunk_size)
 
             else:
@@ -132,7 +137,7 @@ class MServerHandler(SocketServer.StreamRequestHandler):
         elif request["source"]=="client":
             if request["purpose"]=="allocate":
             # if data.startswith("allocate", 7):
-                numChunks = request["numChunks"]
+                numChunks = request["chunk_count"]
                 # numChunks = [int(s) for s in data.split() if s.isdigit()][0]
                 hashes = request["hashes"]
                 # hashes = data.split(" ")[3:]
