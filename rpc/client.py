@@ -8,6 +8,7 @@ import os
 import classeur_pb2
 import classeur_pb2_grpc
 from hurry.filesize import size
+import codecs
 
 MSERVER_PORT = 50051
 CHUNK_SIZE = 65536
@@ -42,7 +43,7 @@ def uploadFile(stub, username):
 	filepath = raw_input("Enter the file path: ")
 	filename = os.path.basename(filepath)
 	try:
-		file = open(filepath, 'r')
+		file = codecs.open(filepath,'r', encoding='latin-1')
 	except:
 		print("Unable to open file %s"%filepath)
 		return

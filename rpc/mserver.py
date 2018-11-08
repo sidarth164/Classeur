@@ -13,7 +13,6 @@ import classeur_pb2_grpc
 
 from rs import RSCodec
 
-CHUNK_SIZE=65536
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 rs = RSCodec(51)
 
@@ -106,6 +105,8 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 
 	def UploadFile(self, request_iterator, context):
 		tot_size = 0
+		filename = ''
+		username = ''
 		for filechunk in request_iterator:
 			filename = filechunk.fileName
 			username = filechunk.userName
