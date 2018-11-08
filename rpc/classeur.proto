@@ -48,6 +48,7 @@ message FileChunks {
     string fileName = 1;
     int64 chunkId = 2;
     string chunkData = 3;
+    string userName = 4;
 }
 
 message ChunkDetails {

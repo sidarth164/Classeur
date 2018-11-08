@@ -15,6 +15,7 @@ from rs import RSCodec
 
 CHUNK_SIZE=65536
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+rs = RSCodec(51)
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["classeur"]
@@ -98,14 +99,48 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 
 	def UploadFile(self, request_iterator, context):
 		tot_size = 0
-		rs = RSCodec(51)
 		for filechunk in request_iterator:
 			filename = filechunk.fileName
+			username = filechunk.userName
 			chunk_id = filechunk.chunkId
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
+			snodes = 5
+			snode_list = [y+1 for y in xrange(snodes)]
+			print(type(chunk_data))
+			chunk_data = bytearray(chunk_data, 'utf-8')
+			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
+			
+			'''
+				send echunk_arr elements to their respective snodes
+			'''
 
-			print(chunk_id,tot_size)
+			file = files.find_one({"name":filename,"user":username})
+			if not file:
+				file={}
+				file["name"]=filename
+				file["user"]=username
+				file["size"]=tot_size
+				file["chunk_count"]=chunk_id
+				file["snodes"]=snode_list
+				file["chunk"]={}
+				file["chunk"][str(chunk_id)]={'size':echunk_length,'div':csize_div}
+				files.insert_one(file)
+			else:
+				chunk={'size':echunk_length,'div':csize_div}
+				files.update_one(
+					{'name':filename,'user':username},
+					{'$set':
+						{'chunk.'+str(chunk_id):chunk, 'size':tot_size, 'chunk_count':chunk_id, 'snodes':snode_list}
+					})
+
+			print(echunk_length)
+			print(csize_div)
+
+		users.update_one(
+			{'username':username},
+			{'$push':{'files_owned':filename},
+			'$inc':{'total_size':tot_size}})
 
 		ack = classeur_pb2.Acknowledgement(response=True)
 		return ack

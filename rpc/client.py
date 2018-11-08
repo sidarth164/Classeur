@@ -28,11 +28,11 @@ def listFiles(stub, username):
 		print(files)
 	# return fileList
 
-def uploadFile(stub):
+def uploadFile(stub, username):
 	filepath = raw_input("Enter the file path: ")
 	filename = os.path.basename(filepath)
 	try:
-		file = open(filepath, 'rb')
+		file = open(filepath, 'r')
 	except:
 		print("Unable to open file %s"%filepath)
 		return
@@ -40,7 +40,7 @@ def uploadFile(stub):
 	chunk_count = filesize/CHUNK_SIZE
 	if filesize%CHUNK_SIZE:
 		chunk_count+=1
-	chunk_iterator= fileChunkIterator(file,filename,chunk_count)
+	chunk_iterator= fileChunkIterator(file,filename,chunk_count,username)
 	ack = stub.UploadFile(chunk_iterator)
 	if ack.response == True:
 		print("File uploaded successfully")
@@ -52,9 +52,9 @@ def downloadFile(stub):
 	pass
 
 
-def fileChunkIterator(file, filename, chunk_count):
+def fileChunkIterator(file, filename, chunk_count, username):
 	filechunk = classeur_pb2.FileChunks(
-		fileName = filename, chunkId = 0, chunkData = None)
+		fileName = filename, chunkId = 0, chunkData = None, userName = username)
 	for x in xrange(chunk_count):
 		chunk = file.read(CHUNK_SIZE)
 		filechunk.chunkId=x+1
@@ -73,17 +73,18 @@ def run():
 		stub = classeur_pb2_grpc.clientHandlerStub(channel)
 		#now start using the stub
 
-		success = uploadFile(stub)
+		# username = 'nilesh'
+		# success = uploadFile(stub, username)
 
-		# username = raw_input("Please enter your username: ")
-		# password = getpass.getpass('Password: ')
+		username = raw_input("Please enter your username: ")
+		password = getpass.getpass('Password: ')
 
-		# TODO: uncomment below code after testing is complete!
+		TODO: uncomment below code after testing is complete!
 		if checkAuthentication(stub, username, password)==True:
 			print("Congratulations! Authentication successful")
 			while 1:
-				print("Choose any option <Enter the option number>:\n 1. List Files\n 2. Upload File\n 3. Download File\n 4. Exit")
-				option = input("Option: ")
+				print("Choose any option <Enter the option number>:\n 1. List Files\n 2. Upload File\n 3. Download File\n 4. Total Size\n 5. Exit")
+				option = raw_input("Option: ")
 				option = int(option)
 				if option == 1:
 					listFiles(stub,username)
@@ -91,6 +92,9 @@ def run():
 					uploadFile(stub)
 				elif option == 3:
 					downloadFile(stub)
+				elif option == 4:
+					# total size occupied
+					pass
 				else:
 					sys.exit(0)
 		else:
