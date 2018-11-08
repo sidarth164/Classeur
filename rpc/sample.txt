@@ -1,0 +1,176 @@
+Exterior Gateway Protocol (EGP)
+
+If two routers belonging to two different autonomous systems exchange routing information ,the protocol used is called EGP . EGP consists of:
+
+    Acquisition Request: A router sends a request to another neighbour router saying 'I want to talk'.
+    Acquisition Confirm: This is a positive reply to the Acquisition request.
+    Acquisition Refuse: This is a negative response to the Acquisition request.
+    Cease Request: This requests termination of neighbour relationship.
+    Cease Confirm: This is a confirmation response to the Cease Request.
+    Hello : This is used to find if the neighbour router is up or down.This requests router to respond if alive.
+    I Heard You: This is a response to the Hello message confirming that the router is alive. Because it is possible for Hello or I Heard You messages to be lost in transit, EGP uses a k-out-of-n rule to determine whether a network is down.At least k of the last n messages must fail for the router to declare its neighbour down.
+    Poll Request: This is a request for network routing update.
+    Routing Update: This conveys routing information about reachable networks to its EGP neighbour. The routing information is the distance vector of the reachable networks.
+    Error: This is a response to an incorrect message. 
+
+EGP is used only to find network reachability and not for differentiating between good and bad routes. We can only use distance metric to declare a route plausible and not for comparing it with some other route (unless the two route form part of a same autonomous system).  Since there cannot be two different routes to the same network, EGP restricts the topology of any internet to a tree structure in which a core system forms the root. There are no loops among other autonomous systems connected to it. This leads to several problems:
+
+    Univerasal connectivity fails if the core gateway system fails.
+    EGP can advertise only one path to a given network.
+    EGP does not support load sharing on routers between arbitrary autonomous systems.
+    Multiple backbone networks with multiple connections between them cannot be handled by EGP. 
+
+Border Gateway Protocol(BGP)
+BGP is a distance-vector protocol used to communicate between different ASes. Instead of maintaining just the cost to each destination,each BGP router keeps track of the exact path used.Similarly,instead of periodically giving each neighbour its estimated cost to each destination, each BGP router tells its neighbours the path it is using.Every BGP router contains a module that examines routes to a given destination and scores them returning a number for destination to each route. Any route violating a policy constraint automatically gets a score of infinity. The router adapts a route with shortest distance.The scoring function is not a part of the BGP protocol and can be any function that the system managers want.BGP easily solves the count to infinity problem that plagues other distance-vector algorithms as whole path is known. 
+
+Passing Arguments in Distributed Programs
+Problem: Incompatibility in argument storage
+For example, some machines may use 7 bit for storing characters while some others might use 8 bit, some machines may use Big-endian representation while others might use Small-endian representation.
+Possible Solutions
+
+    One solution may be to find out the architecture of receiving end, convert the data to be sent to that architectue and then send the data. However, this will lead to following problems:
+        It is not easy to find out the architecture of a machine.
+        If I change the architecture of my machine then this information has to be conveyed to the client. 
+
+    Another solution is to have a standard format for networks. This may lead to inefficiency in the case when the two communicating machines have the same architecture beacuse in this case the conversion is unnecessary. 
+
+XDR (External Data Representation)
+XDR was the solution adopted by SUN RPC. RPC was mainly the outcome of the need for distributed filesystems(NFS).
+Buffer Paradigm
+The program allocates a buffer large enough to hold the external representation of a message and adds items one at a time. The library routine invoked to allocate space for the buffer is xdr_mem_create . After allocating space we may append data to this buffer using various conversion library routines like xdr_int (xdr_int coverts an integer to it's external representaion and appends it to the buffer) to convert native objects to external representaion and then append to the buffer. After all the data to be passed has been converted and appended we send the buffer.
+ASN.1
+First add the information related to the the data being sent to the buffer and then append the data to the buffer. For example, to send a character followed by an integer (if the sending machine uses one byte for char and two bytes for integers) we send the information as - one byte char, two byte integer ...
+
+The routines for encoding and decoding are the same, depending on the type of the buffer which may be (specified at the time fo allocating space for the buffer) XDR_ENCODE or XDR_DECODE encoding or decoding are performed respectively.
+
+For the routine xdr_int(xdrs, &i)
+
+    If the allocation was done as xdr_mem_create(xdrs, buf, BUFSIZE, XDR_ENCODE) then the value obtained by converting i to its external representation would be appended to the buffer.
+    If the allocation was done as xdr_mem_create(xdrs, buf, BUFSIZE, XDR_DECODE) then an integer will be extracted , decoded , and the value will be stored in the variable i. 
+
+There are routines (like xdr_stdin_create) to write/read from sockets and file descriptors. 
+
+ Firewall Mechanisms
+1. Network Policy : Here, we take into consideration, what services are allowed for outside and inside users and the services which are allowed can have additional restrictions. e.g.. I might be allowed to download things from the net but not upload i.e.. some outside users cannot download the things from our net. Some exceptional cases might be there which have to be handled separately. And if some new application comes up then , we choose an appropriate network policy.
+
+2. Authentication mechanism  : An application can be designed which ask for a password for authentication.
+
+3. Packet Filtering : Router have information about some particular packets which should not be allowed.
+
+4. Application gateways : or proxy servers.
+ 
+Certain Problems with Firewall
+
+1. Complacency : There are lots of attacks on the firewall from internal users and therefore, it's limitations should be understood.
+
+2. Encapsulated packets : An encapsulated packet is an IP packet within another IP packet. If we ask the router to drop encapsulated packets then, it will drop the multicast packets also.
+
+3. Throughput :So, in order to check which packets are allowed and which are not, we are doing some processing which can be an overhead and thus affects throughput.
+ 
+Authentication:
+
+We can use the following mechanisms:
+
+    One time passwords:  passwords are used only once and then it changes. But only the user and the machine knows the changing passwords.
+    password aging : User are forced to change passwords after some time on regular intervals.
+    smart cards :  swipe through the PC.
+    biometrics : eyes or finger prints are used.
+
+ 
+Packet Filtering :
+
+Terms associated:
+
+    Source IP address
+    Destination IP address
+    Source port #
+    Destination port #
+    protocol
+    interface
+
+      Many commercial routers offer a mechanism that augments normal routing and permits a manager to further control packet processing. Informally called a packet filter, the mechanism requires the manager to specify how the router should dispose of each datagram. For example, the manager might choose to filter (i.e.. block) all datagrams that come from a particular source or those used by a particular application, while choosing to route other datagrams to their destination.
+
+     The term packet filter arises because the filtering mechanism does not keep a record of interaction or a history of previous datagrams. Instead, the filter considers each datagrams separately. When a datagram first arrives, the router passes the datagram through its packet filter before performing any other processing. If the filter rejects the datagram, the router drops it immediately.
+
+    For example, normally I won't allow TFTP, openwin, RPC, rlogin, rsh packets to pass through the router whether from inside or outside and router just discard these packets. But I might put some restrictions on telnet, ftp, http, and smtp packets in order to pass through the router and therefore some processing is to be done before discarding or allowing these packets.
+
+    Because TCP/IP does not dictate a standard for packet filters, each router vendor is free to choose the capabilities of their packet filter as well as the interface the manager uses to configure the filter. Some routers permit a manager  to configure separate filter actions for each interface, while others have a single configuration for all interfaces. Usually, when specifying datagrams that the filter should block, a manager can list any combination of source IP address, destination IP address, protocol, source protocol port number, and destination protocol port number.
+    So, these filtering rules may become more tricky with complex network policies.
+ 
+    Since, Filtering rules are based on port numbers, there is a problem with RPC applications. First, the number of well-known ports is large and growing. Thus, a manager would need to update such a list continually because a simple error of  omission could leave the firewall vulnerable. Second, much of the traffic on an internet does not travel to or from a well-known port. In addition to programmers who can choose port numbers for their private client-server applications, services like Remote Procedure Call (RPC) assigns port dynamically. Third, listing ports of well-known services leaves the firewall vulnerable to tunneling, a technique in which one datagram is temporarily encapsulated in another for transfer across part of an internet.
+
+ 
+Relay Software (proxies) :
+
+I can run multiple proxy on same machine. They may detect misuse by keeping loops. For example, some machine give login to Ph.D.. students. So, in this case it's better to keep proxy servers than to give login on those machines. But the disadvantage with this is that there are two connections for each process.
+
+                _________                                __________
+                |                 |                               |                  |
+                |    User     |_______________|  Proxy       |___________    Outside
+                | ________|              1.             |_________ |            2.
+ 
+ 
+Various Firewall Considerations
+
+1. Packet Filtering Firewall
+This is the simplest design and it is considered when the network is small and user don't run many Intranet applications.
+                                                    __________
+                                                    |                    |
+                Intranet  __________|   Router      |__________   Internet
+                                                    |________ _ |
+                                                               |
+                                                               |
+                                                            Filter
+
+2. Dual home gateway
+This gives least amount of flexibility. Instead of router, we have application gateways.
+                                                     ______________
+                                                     | Application      |
+                   Inside   ________ _ |       level            |___________   Outside
+                                                     |      gateway      |
+                                                     |____________  |
+                                                            proxy
+ 
+3. Sreened host Firewall
+It's the combination of the above two schemes. Some applications are allowed uninterrupted while some have to be screened. For any reasonable size network, Screened host firewall can get loaded.
+
+                                      _________                                                ___________
+                                     |                  |                                               |                    |
+       Inside  _________| Router 1  |_______________________ | Router 2     |______  Outside
+                                     |_________|                    |                         |__________ |
+                                                                    ____|______
+                                                                    |                    |
+                                                                    |    Proxy      |
+                                                                    |__________|
+
+The problem with this is that there is only one proxy and thus, it may get overloaded. Therefore, to reduce load, we can use multiple screened host firewalls. And this is what normally used.
+
+                             _________                                                                __________
+                            |                  |                                                              |                    |
+     Inside  _____ | Router 1  |______________________________  | Router 2     |_____Outside
+                            |_________|             |                                               |__________ |
+                                                     ____|____
+                                                    |                 |
+                                                    | Proxy 1   |      Proxy2   .......
+                                                    |________ |
+ 
+ 
+Modem pool
+User can dial and open only a terminal server but he has to give a password. But TELNET and FTP client does not understand proxy. Therefore, people come out with Transparent proxy which means that I have some memory which keeps track of whether this packet was allowed earlier or not and therefore, I need not check this time. Client does not know that there is somebody who is checking my authentication.
+So, transparent proxy is used only for checking the IP packets whereas proxy is used when many IP addresses are not available.
+
+Private IP (PIP address)
+It is an extension of transparent proxy. Here we also change the IP address (source address) to one of the allocated IP address and send it. So, the client does not know that the IP address has been changed, only the proxy server knows it. The machine that changes the IP address is Network address translator (NAT) . NAT also changes other things like CRC, TCP header checksum  ( this is calculated using pseudo IP header). NAT can also change the port number.
+
+    e.g..   Port address translation
+
+                                                                     ____________ 
+                                               X  -------|                       |
+                                                                    |      NAT         |
+                                               Y  -------|___________ |
+
+                    X1 , P1   ---->     G1 , Pa   (IP address, port #)
+                    X1 , P2   ---->     G1 , Pb
+                     Y  , P3    ---->     G1, Pc
+
+I may not like to have global IP address because then, anybody can contact me inspite of these security measures. So, I work with Private IP. In that case, there has to be a one-to-one mapping between private IP and global IP. 

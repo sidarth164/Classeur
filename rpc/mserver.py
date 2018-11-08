@@ -45,7 +45,14 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 		return filelist
 
 	def UploadFile(self, request_iterator, context):
-		pass
+		tot_size = 0
+		for filechunk in request_iterator:
+			filename = filechunk.fileName
+			chunk_id = filechunk.chunkId
+			chunk_data = filechunk.chunkData
+			tot_size += len(chunk_data)
+
+			print(chunk_id,tot_size)
 
 	def DownloadFile(self, request, context):
 		pass
