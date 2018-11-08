@@ -29,6 +29,10 @@ To install gRPC tools, run:
 
 $ python -m pip install grpcio-tools googleapis-common-protos
 
+Compiling .proto file
+---------------------
+$ python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. classeur.proto
+
 Run the Demo:
 -------------
 

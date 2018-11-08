@@ -35,22 +35,11 @@ def uploadFile(stub):
 		file = open(filepath, 'rb')
 	except:
 		print("Unable to open file %s"%filepath)
+		return
 	filesize = os.path.getsize(filepath)
 	chunk_count = filesize/CHUNK_SIZE
 	if filesize%CHUNK_SIZE:
 		chunk_count+=1
-	# filechunk = classeur_pb2.FileChunks(
-	# 	fileName = filename, chunkId = 0, chunkData = None)
-
-	# x=0
-	# while 1:
-	# 	x+=1
-	# 	chunk = file.read(CHUNK_SIZE)
-	# 	if not chunk:
-	# 		break
-	# 	filechunk = classeur_pb2.FileChunks(
-	# 		fileName = filename, chunkId = x, chunkData = chunk)
-
 	chunk_iterator= fileChunkIterator(file,filename,chunk_count)
 	ack = stub.UploadFile(chunk_iterator)
 	if ack.response == True:
@@ -64,14 +53,12 @@ def downloadFile(stub):
 
 
 def fileChunkIterator(file, filename, chunk_count):
+	filechunk = classeur_pb2.FileChunks(
+		fileName = filename, chunkId = 0, chunkData = None)
 	for x in xrange(chunk_count):
 		chunk = file.read(CHUNK_SIZE)
-		# print(chunk)
-		if not chunk:
-			break
-		print(x)
-		filechunk = classeur_pb2.FileChunks(
-			fileName = filename, chunkId = x+1, chunkData = chunk)
+		filechunk.chunkId=x+1
+		filechunk.chunkData=chunk
 		yield filechunk
 
 def run():
@@ -86,28 +73,28 @@ def run():
 		stub = classeur_pb2_grpc.clientHandlerStub(channel)
 		#now start using the stub
 
-		uploadFile(stub)
+		success = uploadFile(stub)
 
 		# username = raw_input("Please enter your username: ")
 		# password = getpass.getpass('Password: ')
 
 		# TODO: uncomment below code after testing is complete!
-		# if checkAuthentication(stub, username, password)==True:
-		# 	print("Congratulations! Authentication successful")
-		# 	while 1:
-		# 		print("Choose any option <Enter the option number>:\n 1. List Files\n 2. Upload File\n 3. Download File\n 4. Exit")
-		# 		option = input("Option: ")
-		# 		option = int(option)
-		# 		if option == 1:
-		# 			listFiles(stub,username)
-		# 		elif option == 2:
-		# 			uploadFile(stub)
-		# 		elif option == 3:
-		# 			downloadFile(stub)
-		# 		else:
-		# 			sys.exit(0)
-		# else:
-		# 	print("Incorrect credentials! Please try again.")
+		if checkAuthentication(stub, username, password)==True:
+			print("Congratulations! Authentication successful")
+			while 1:
+				print("Choose any option <Enter the option number>:\n 1. List Files\n 2. Upload File\n 3. Download File\n 4. Exit")
+				option = input("Option: ")
+				option = int(option)
+				if option == 1:
+					listFiles(stub,username)
+				elif option == 2:
+					uploadFile(stub)
+				elif option == 3:
+					downloadFile(stub)
+				else:
+					sys.exit(0)
+		else:
+			print("Incorrect credentials! Please try again.")
 		
 
 if __name__ == "__main__":
