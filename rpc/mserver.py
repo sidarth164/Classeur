@@ -6,6 +6,7 @@ import time
 
 import pymongo
 from pymongo import MongoClient
+import json
 
 import classeur_pb2
 import classeur_pb2_grpc
@@ -16,6 +17,7 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client["classeur"]
 users = db["users"]
 sNodeData = db["sNodeData"]
+files = db["files"]
 
 class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 
@@ -33,7 +35,14 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			return classeur_pb2.Validity(vailidity=True)
 
 	def ListFiles(self, request, context):
-		pass
+		username = request.username
+		query = {"username": username}
+		queryResult = users.find_one(query, {"_id":0, "files_owned":1})
+		data = {'data':queryResult['files_owned']}
+		data = json.dumps(data)
+		filelist = classeur_pb2.FileList(
+			filesOwned=data,fileSizes=0)
+		return filelist
 
 	def UploadFile(self, request_iterator, context):
 		pass
@@ -58,10 +67,11 @@ def serve():
 	classeur_pb2_grpc.add_clientHandlerServicer_to_server(clientHandlerServicer(), server)
 	classeur_pb2_grpc.add_sNodeHandlerServicer_to_server(sNodeHandlerServicer(), server)
 	server.add_insecure_port('[::]:50051')
-	print("hello")
 	server.start()
+	print("hello")
 	try:
 		while True:
+			print("anyone there?")
 			time.sleep(_ONE_DAY_IN_SECONDS)
 	except KeyboardInterrupt:
 		server.stop(0)
