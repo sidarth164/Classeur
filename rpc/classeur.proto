@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package classeur;
+
+service clientHandler {
+//read the following calls from client's perspective
+
+    rpc CheckAuthentication(UserCredentials) returns (Validity) {}
+
+    rpc ListFiles(UserToken) returns (FileList) {}
+
+    rpc UploadFile(stream FileChunks) returns (Acknowledgement) {}
+
+    rpc DownloadFile(FileNumber) returns (stream FileChunks) {}
+
+}
+
+service sNodeHandler {
+//read the following calls from sNode's perspective
+
+    rpc SendFileChunks(stream FileChunks) returns (Acknowledgement) {}
+
+    rpc ReceiveFileChunks(ChunkDetails) returns (stream FileChunks) {}
+
+    rpc Heartbeat (Request) returns (Response) {}
+
+}
+
+message UserCredentials {
+    string username = 1;
+    string password = 2;
+}
+
+message Validity {
+    bool vailidity = 1;
+}
+
+message UserToken {
+    string username = 1;
+}
+
+message FileList {
+    string filesOwned = 1;
+    int64 filesSizes = 2;
+}
+
+message FileChunks {
+    string fileName = 1;
+    int64 chunkId = 2;
+    string chunkData = 3;
+}
+
+message ChunkDetails {
+    string fileName = 1;
+    int64 chunkId = 2;
+}
+
+message Acknowledgement {
+    bool response = 1;
+}
+
+message FileNumber {
+    int64 fileNumber = 1;
+}
+
+message Request {
+    string request = 1;
+}
+
+message Response {
+    string response = 2;
+}
