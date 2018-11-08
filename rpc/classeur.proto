@@ -13,6 +13,7 @@ service clientHandler {
 
     rpc DownloadFile(FileNumber) returns (stream FileChunks) {}
 
+    rpc ReportSize(UserToken) returns (FileSize) {}
 }
 
 service sNodeHandler {
@@ -37,6 +38,10 @@ message Validity {
 
 message UserToken {
     string username = 1;
+}
+
+message FileSize {
+    int64 size = 1;
 }
 
 message FileList {

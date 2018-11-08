@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='classeur',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0e\x63lasseur.proto\x12\x08\x63lasseur\"5\n\x0fUserCredentials\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x1d\n\x08Validity\x12\x11\n\tvailidity\x18\x01 \x01(\x08\"\x1d\n\tUserToken\x12\x10\n\x08username\x18\x01 \x01(\t\"2\n\x08\x46ileList\x12\x12\n\nfilesOwned\x18\x01 \x01(\t\x12\x12\n\nfilesSizes\x18\x02 \x01(\x03\"T\n\nFileChunks\x12\x10\n\x08\x66ileName\x18\x01 \x01(\t\x12\x0f\n\x07\x63hunkId\x18\x02 \x01(\x03\x12\x11\n\tchunkData\x18\x03 \x01(\t\x12\x10\n\x08userName\x18\x04 \x01(\t\"1\n\x0c\x43hunkDetails\x12\x10\n\x08\x66ileName\x18\x01 \x01(\t\x12\x0f\n\x07\x63hunkId\x18\x02 \x01(\x03\"#\n\x0f\x41\x63knowledgement\x12\x10\n\x08response\x18\x01 \x01(\x08\" \n\nFileNumber\x12\x12\n\nfileNumber\x18\x01 \x01(\x03\"\x1a\n\x07Request\x12\x0f\n\x07request\x18\x01 \x01(\t\"\x1c\n\x08Response\x12\x10\n\x08response\x18\x02 \x01(\t2\x92\x02\n\rclientHandler\x12\x46\n\x13\x43heckAuthentication\x12\x19.classeur.UserCredentials\x1a\x12.classeur.Validity\"\x00\x12\x36\n\tListFiles\x12\x13.classeur.UserToken\x1a\x12.classeur.FileList\"\x00\x12\x41\n\nUploadFile\x12\x14.classeur.FileChunks\x1a\x19.classeur.Acknowledgement\"\x00(\x01\x12>\n\x0c\x44ownloadFile\x12\x14.classeur.FileNumber\x1a\x14.classeur.FileChunks\"\x00\x30\x01\x32\xd2\x01\n\x0csNodeHandler\x12\x45\n\x0eSendFileChunks\x12\x14.classeur.FileChunks\x1a\x19.classeur.Acknowledgement\"\x00(\x01\x12\x45\n\x11ReceiveFileChunks\x12\x16.classeur.ChunkDetails\x1a\x14.classeur.FileChunks\"\x00\x30\x01\x12\x34\n\tHeartbeat\x12\x11.classeur.Request\x1a\x12.classeur.Response\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x0e\x63lasseur.proto\x12\x08\x63lasseur\"5\n\x0fUserCredentials\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x1d\n\x08Validity\x12\x11\n\tvailidity\x18\x01 \x01(\x08\"\x1d\n\tUserToken\x12\x10\n\x08username\x18\x01 \x01(\t\"\x18\n\x08\x46ileSize\x12\x0c\n\x04size\x18\x01 \x01(\x03\"2\n\x08\x46ileList\x12\x12\n\nfilesOwned\x18\x01 \x01(\t\x12\x12\n\nfilesSizes\x18\x02 \x01(\x03\"T\n\nFileChunks\x12\x10\n\x08\x66ileName\x18\x01 \x01(\t\x12\x0f\n\x07\x63hunkId\x18\x02 \x01(\x03\x12\x11\n\tchunkData\x18\x03 \x01(\t\x12\x10\n\x08userName\x18\x04 \x01(\t\"1\n\x0c\x43hunkDetails\x12\x10\n\x08\x66ileName\x18\x01 \x01(\t\x12\x0f\n\x07\x63hunkId\x18\x02 \x01(\x03\"#\n\x0f\x41\x63knowledgement\x12\x10\n\x08response\x18\x01 \x01(\x08\" \n\nFileNumber\x12\x12\n\nfileNumber\x18\x01 \x01(\x03\"\x1a\n\x07Request\x12\x0f\n\x07request\x18\x01 \x01(\t\"\x1c\n\x08Response\x12\x10\n\x08response\x18\x02 \x01(\t2\xcb\x02\n\rclientHandler\x12\x46\n\x13\x43heckAuthentication\x12\x19.classeur.UserCredentials\x1a\x12.classeur.Validity\"\x00\x12\x36\n\tListFiles\x12\x13.classeur.UserToken\x1a\x12.classeur.FileList\"\x00\x12\x41\n\nUploadFile\x12\x14.classeur.FileChunks\x1a\x19.classeur.Acknowledgement\"\x00(\x01\x12>\n\x0c\x44ownloadFile\x12\x14.classeur.FileNumber\x1a\x14.classeur.FileChunks\"\x00\x30\x01\x12\x37\n\nReportSize\x12\x13.classeur.UserToken\x1a\x12.classeur.FileSize\"\x00\x32\xd2\x01\n\x0csNodeHandler\x12\x45\n\x0eSendFileChunks\x12\x14.classeur.FileChunks\x1a\x19.classeur.Acknowledgement\"\x00(\x01\x12\x45\n\x11ReceiveFileChunks\x12\x16.classeur.ChunkDetails\x1a\x14.classeur.FileChunks\"\x00\x30\x01\x12\x34\n\tHeartbeat\x12\x11.classeur.Request\x1a\x12.classeur.Response\"\x00\x62\x06proto3')
 )
 
 
@@ -125,6 +125,37 @@ _USERTOKEN = _descriptor.Descriptor(
 )
 
 
+_FILESIZE = _descriptor.Descriptor(
+  name='FileSize',
+  full_name='classeur.FileSize',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='size', full_name='classeur.FileSize.size', index=0,
+      number=1, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=145,
+  serialized_end=169,
+)
+
+
 _FILELIST = _descriptor.Descriptor(
   name='FileList',
   full_name='classeur.FileList',
@@ -158,8 +189,8 @@ _FILELIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=145,
-  serialized_end=195,
+  serialized_start=171,
+  serialized_end=221,
 )
 
 
@@ -210,8 +241,8 @@ _FILECHUNKS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=197,
-  serialized_end=281,
+  serialized_start=223,
+  serialized_end=307,
 )
 
 
@@ -248,8 +279,8 @@ _CHUNKDETAILS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=283,
-  serialized_end=332,
+  serialized_start=309,
+  serialized_end=358,
 )
 
 
@@ -279,8 +310,8 @@ _ACKNOWLEDGEMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=334,
-  serialized_end=369,
+  serialized_start=360,
+  serialized_end=395,
 )
 
 
@@ -310,8 +341,8 @@ _FILENUMBER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=371,
-  serialized_end=403,
+  serialized_start=397,
+  serialized_end=429,
 )
 
 
@@ -341,8 +372,8 @@ _REQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=405,
-  serialized_end=431,
+  serialized_start=431,
+  serialized_end=457,
 )
 
 
@@ -372,13 +403,14 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=433,
-  serialized_end=461,
+  serialized_start=459,
+  serialized_end=487,
 )
 
 DESCRIPTOR.message_types_by_name['UserCredentials'] = _USERCREDENTIALS
 DESCRIPTOR.message_types_by_name['Validity'] = _VALIDITY
 DESCRIPTOR.message_types_by_name['UserToken'] = _USERTOKEN
+DESCRIPTOR.message_types_by_name['FileSize'] = _FILESIZE
 DESCRIPTOR.message_types_by_name['FileList'] = _FILELIST
 DESCRIPTOR.message_types_by_name['FileChunks'] = _FILECHUNKS
 DESCRIPTOR.message_types_by_name['ChunkDetails'] = _CHUNKDETAILS
@@ -408,6 +440,13 @@ UserToken = _reflection.GeneratedProtocolMessageType('UserToken', (_message.Mess
   # @@protoc_insertion_point(class_scope:classeur.UserToken)
   ))
 _sym_db.RegisterMessage(UserToken)
+
+FileSize = _reflection.GeneratedProtocolMessageType('FileSize', (_message.Message,), dict(
+  DESCRIPTOR = _FILESIZE,
+  __module__ = 'classeur_pb2'
+  # @@protoc_insertion_point(class_scope:classeur.FileSize)
+  ))
+_sym_db.RegisterMessage(FileSize)
 
 FileList = _reflection.GeneratedProtocolMessageType('FileList', (_message.Message,), dict(
   DESCRIPTOR = _FILELIST,
@@ -466,8 +505,8 @@ _CLIENTHANDLER = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=464,
-  serialized_end=738,
+  serialized_start=490,
+  serialized_end=821,
   methods=[
   _descriptor.MethodDescriptor(
     name='CheckAuthentication',
@@ -505,6 +544,15 @@ _CLIENTHANDLER = _descriptor.ServiceDescriptor(
     output_type=_FILECHUNKS,
     serialized_options=None,
   ),
+  _descriptor.MethodDescriptor(
+    name='ReportSize',
+    full_name='classeur.clientHandler.ReportSize',
+    index=4,
+    containing_service=None,
+    input_type=_USERTOKEN,
+    output_type=_FILESIZE,
+    serialized_options=None,
+  ),
 ])
 _sym_db.RegisterServiceDescriptor(_CLIENTHANDLER)
 
@@ -517,8 +565,8 @@ _SNODEHANDLER = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=1,
   serialized_options=None,
-  serialized_start=741,
-  serialized_end=951,
+  serialized_start=824,
+  serialized_end=1034,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendFileChunks',

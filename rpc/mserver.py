@@ -90,12 +90,19 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 	def ListFiles(self, request, context):
 		username = request.username
 		query = {"username": username}
-		queryResult = users.find_one(query, {"_id":0, "files_owned":1})
-		data = {'data':queryResult['files_owned']}
+		queryResult = users.find_one(query)
+		data = {'files':queryResult['files_owned']}
 		data = json.dumps(data)
 		filelist = classeur_pb2.FileList(
-			filesOwned=data,fileSizes=0)
+			filesOwned=data,filesSizes=queryResult['total_size'])
 		return filelist
+
+	def ReportSize(self, request,context):
+		username = request.username
+		user = users.find_one({'username':username})
+		filesize = classeur_pb2.FileSize(
+			size=user['total_size'])
+		return filesize
 
 	def UploadFile(self, request_iterator, context):
 		tot_size = 0

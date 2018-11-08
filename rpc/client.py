@@ -7,6 +7,7 @@ import json
 import os
 import classeur_pb2
 import classeur_pb2_grpc
+from hurry.filesize import size
 
 MSERVER_PORT = 50051
 CHUNK_SIZE = 65536
@@ -21,12 +22,21 @@ def checkAuthentication(stub, username, password):
 def listFiles(stub, username):
 	userToken = classeur_pb2.UserToken(
 		username = username)
-	data = stub.ListFiles(userToken)
-	data = json.loads(data)
-	fileList = data["data"]   #it will return an array of filenames
-	for files in fileList:
-		print(files)
-	# return fileList
+	result = stub.ListFiles(userToken)
+	data = json.loads(result.filesOwned)
+	fileList = data["files"]   #it will return an array of filenames
+	fileSize = result.filesSizes
+	print("You have occupied %s space in total"%size(fileSize))
+	i=1
+	for file in fileList:
+		print("[%s] %s"%(i,file))
+		i+=1
+
+def reportSize(stub, username):
+	userToken = classeur_pb2.UserToken(
+		username = username)
+	result = stub.ReportSize(userToken)
+	print("You have occupied %s space in total"%size(result.size))
 
 def uploadFile(stub, username):
 	filepath = raw_input("Enter the file path: ")
@@ -48,7 +58,7 @@ def uploadFile(stub, username):
 		print("Problem in file upload!")
 	file.close()
 
-def downloadFile(stub):
+def downloadFile(stub,username):
 	pass
 
 
@@ -79,7 +89,7 @@ def run():
 		username = raw_input("Please enter your username: ")
 		password = getpass.getpass('Password: ')
 
-		TODO: uncomment below code after testing is complete!
+		# TODO: uncomment below code after testing is complete!
 		if checkAuthentication(stub, username, password)==True:
 			print("Congratulations! Authentication successful")
 			while 1:
@@ -89,11 +99,11 @@ def run():
 				if option == 1:
 					listFiles(stub,username)
 				elif option == 2:
-					uploadFile(stub)
+					uploadFile(stub,username)
 				elif option == 3:
-					downloadFile(stub)
+					downloadFile(stub,username)
 				elif option == 4:
-					# total size occupied
+					reportSize(stub,username)
 					pass
 				else:
 					sys.exit(0)

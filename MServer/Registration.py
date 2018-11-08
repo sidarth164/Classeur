@@ -10,7 +10,7 @@ if __name__=="__main__":
 	print("Welcome to Classeur User Registration!\nPlease answer the following questions for successful registration\n")
 
 	while 1:
-		username = input("Username: ")
+		username = raw_input("Username: ")
 		password = getpass("Password: ")
 		exists = users.find_one({'username':username})
 		if exists==None:
