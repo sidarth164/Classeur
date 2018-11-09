@@ -11,7 +11,7 @@ service clientHandler {
 
     rpc UploadFile(stream FileChunks) returns (Acknowledgement) {}
 
-    rpc DownloadFile(FileNumber) returns (stream FileChunks) {}
+    rpc DownloadFile(FileName) returns (stream FileChunks) {}
 
     rpc ReportSize(UserToken) returns (FileSize) {}
 }
@@ -65,8 +65,9 @@ message Acknowledgement {
     bool response = 1;
 }
 
-message FileNumber {
-    int64 fileNumber = 1;
+message FileName {
+    string fileName = 1;
+    string userName = 2;
 }
 
 message Request {

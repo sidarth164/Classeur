@@ -60,12 +60,35 @@ def uploadFile(stub, username):
 	file.close()
 
 def downloadFile(stub,username):
-	pass
-
+	filename = raw_input("Enter the filename: ")
+	fileName = classeur_pb2.FileName(fileName=filename, userName=username)
+	chunk_iter = stub.DownloadFile(fileName)
+	if not os.path.exists('downloads'):
+	    try:
+	        os.makedirs('downloads')
+	    except OSError as exc: # Guard against race condition
+	        if exc.errno != errno.EEXIST:
+	            raise
+	file = codecs.open('./downloads/'+filename, 'w', encoding='latin-1')
+	for chunk in chunk_iter:
+		if chunk.chunkId==-1:
+			print("File not found!")
+			os.remove(file.name)
+			file.close()
+			return
+		elif chunk.chunkId==-2:
+			print("File Corrupted in cloud! Can not be downloaded!")
+			file.close()
+			os.remove(file.name)
+			return
+		ch_data = chunk.chunkData
+		file.write(ch_data)
+	print("Download Successful!")
+	file.close()
 
 def fileChunkIterator(file, filename, chunk_count, username):
 	filechunk = classeur_pb2.FileChunks(
-		fileName = filename, chunkId = 0, chunkData = None, userName = username)
+		fileName = filename, chunkId = -1, chunkData = None, userName = username)
 	for x in xrange(chunk_count):
 		chunk = file.read(CHUNK_SIZE)
 		filechunk.chunkId=x+1

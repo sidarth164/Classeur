@@ -31,7 +31,7 @@ class clientHandlerStub(object):
         )
     self.DownloadFile = channel.unary_stream(
         '/classeur.clientHandler/DownloadFile',
-        request_serializer=classeur__pb2.FileNumber.SerializeToString,
+        request_serializer=classeur__pb2.FileName.SerializeToString,
         response_deserializer=classeur__pb2.FileChunks.FromString,
         )
     self.ReportSize = channel.unary_unary(
@@ -100,7 +100,7 @@ def add_clientHandlerServicer_to_server(servicer, server):
       ),
       'DownloadFile': grpc.unary_stream_rpc_method_handler(
           servicer.DownloadFile,
-          request_deserializer=classeur__pb2.FileNumber.FromString,
+          request_deserializer=classeur__pb2.FileName.FromString,
           response_serializer=classeur__pb2.FileChunks.SerializeToString,
       ),
       'ReportSize': grpc.unary_unary_rpc_method_handler(
