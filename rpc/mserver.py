@@ -14,9 +14,13 @@ import classeur_pb2_grpc
 
 from rs import RSCodec
 
-CHUNK_SIZE=65536
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 rs = RSCodec(51)
+
+# Comment below global variables
+# echunk_arr=['']*5
+# echunk_length=[]
+# csize_div=[]
 
 client = MongoClient("mongodb://localhost:27017/")
 db = client["classeur"]
@@ -26,7 +30,8 @@ files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
 def encode_chunk(chunk,n):
-	enc_chunk=rs.encode(chunk)
+	enc_chunk=rs.encode(chunk).decode('latin-1')
+	# Uncomment below line
 	echunk_arr=['']*n
 	echunk_length=[0]*n
 	csize=255/n
@@ -45,6 +50,7 @@ def encode_chunk(chunk,n):
 
 def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 	epos=einc=node=0
+	print(len(echunk_arr))
 	for x in xrange(n):
 		if echunk_arr[x]=='':
 			echunk_arr[x]=''.join(['0' for y in xrange(echunk_length[x])])
@@ -69,7 +75,14 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 			inc[x]+=csize_div[x]
 		e+=255
 
-	return rs.decode(enc_chunk,epos_arr)
+	try:
+		decoded=rs.decode(enc_chunk,epos_arr).decode('latin-1')
+		print('decode successful')
+	except:
+		print('decode failure')
+		decoded=None
+
+	return decoded
 
 def upload_chunk(snode, chunk,username,chunk_id,filename):
     sock = socket.socket()
@@ -104,15 +117,24 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 	def ListFiles(self, request, context):
 		username = request.username
 		query = {"username": username}
-		queryResult = users.find_one(query, {"_id":0, "files_owned":1})
-		data = {'data':queryResult['files_owned']}
+		queryResult = users.find_one(query)
+		data = {'files':queryResult['files_owned']}
 		data = json.dumps(data)
 		filelist = classeur_pb2.FileList(
-			filesOwned=data,fileSizes=0)
+			filesOwned=data,filesSizes=queryResult['total_size'])
 		return filelist
+
+	def ReportSize(self, request,context):
+		username = request.username
+		user = users.find_one({'username':username})
+		filesize = classeur_pb2.FileSize(
+			size=user['total_size'])
+		return filesize
 
 	def UploadFile(self, request_iterator, context):
 		tot_size = 0
+		filename = ''
+		username = ''
 		for filechunk in request_iterator:
 			filename = filechunk.fileName
 			username = filechunk.userName
@@ -122,7 +144,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			snodes = 5
 			snode_list = [y+1 for y in xrange(snodes)]
 			print(type(chunk_data))
-			chunk_data = bytearray(chunk_data, 'utf-8')
+			chunk_data = bytearray(chunk_data, 'latin-1')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
 			for id in snode_list:
 				query = {"id":id}
@@ -146,6 +168,10 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 				file["chunk"]={}
 				file["chunk"][str(chunk_id)]={'size':echunk_length,'div':csize_div}
 				files.insert_one(file)
+				users.update_one(
+					{'username':username},
+					{'$push':{'files_owned':filename},
+					'$inc':{'total_size':tot_size}})
 			else:
 				chunk={'size':echunk_length,'div':csize_div}
 				files.update_one(
@@ -157,16 +183,44 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			print(echunk_length)
 			print(csize_div)
 
-		users.update_one(
-			{'username':username},
-			{'$push':{'files_owned':filename},
-			'$inc':{'total_size':tot_size}})
 
 		ack = classeur_pb2.Acknowledgement(response=True)
 		return ack
 
 	def DownloadFile(self, request, context):
-		pass
+		# retrieved_chunk=decode_chunk(echunk_arr,echunk_length,csize_div,snodes)
+
+		filename = request.fileName
+		username = request.userName
+		snodes = 5
+		snode_list = [y+1 for y in xrange(snodes)]
+		file_data = files.find_one({'name':filename,'user':username})
+		file_chunk = classeur_pb2.FileChunks(
+			fileName = filename, chunkId=-1, chunkData=None, userName=username)
+		if not file_data:
+			print('File %s not found!'%filename)
+			for x in range(1):
+				yield file_chunk
+		else:
+			for chunk_id in file_data["chunk"]:
+				
+				''' 
+				Collect the chunks from all the snodes. If a node is down assume its chunk as null string
+				echunk_arr => list of chunks
+				echunk_length
+				echunk_csize_div
+				'''
+				echunk_length=file_data["chunk"][chunk_id]['size']
+				csize_div=file_data["chunk"][chunk_id]['div']
+				retrieved_chunk=decode_chunk(echunk_arr,echunk_length,csize_div,snodes)
+				if not retrieved_chunk:
+					file_chunk.chunkId=-2
+					yield file_chunk
+				else:
+					file_chunk.chunkData=retrieved_chunk
+					file_chunk.chunkId=int(chunk_id)
+					yield file_chunk
+
 
 class sNodeHandlerServicer(classeur_pb2_grpc.sNodeHandlerServicer):
 	

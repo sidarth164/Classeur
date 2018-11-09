@@ -7,6 +7,8 @@ import json
 import os
 import classeur_pb2
 import classeur_pb2_grpc
+from hurry.filesize import size
+import codecs
 
 MSERVER_PORT = 50051
 CHUNK_SIZE = 65536
@@ -21,18 +23,27 @@ def checkAuthentication(stub, username, password):
 def listFiles(stub, username):
 	userToken = classeur_pb2.UserToken(
 		username = username)
-	data = stub.ListFiles(userToken)
-	data = json.loads(data)
-	fileList = data["data"]   #it will return an array of filenames
-	for files in fileList:
-		print(files)
-	# return fileList
+	result = stub.ListFiles(userToken)
+	data = json.loads(result.filesOwned)
+	fileList = data["files"]   #it will return an array of filenames
+	fileSize = result.filesSizes
+	print("You have occupied %s space in total"%size(fileSize))
+	i=1
+	for file in fileList:
+		print("[%s] %s"%(i,file))
+		i+=1
+
+def reportSize(stub, username):
+	userToken = classeur_pb2.UserToken(
+		username = username)
+	result = stub.ReportSize(userToken)
+	print("You have occupied %s space in total"%size(result.size))
 
 def uploadFile(stub, username):
 	filepath = raw_input("Enter the file path: ")
 	filename = os.path.basename(filepath)
 	try:
-		file = open(filepath, 'r')
+		file = codecs.open(filepath,'r', encoding='latin-1')
 	except:
 		print("Unable to open file %s"%filepath)
 		return
@@ -48,13 +59,36 @@ def uploadFile(stub, username):
 		print("Problem in file upload!")
 	file.close()
 
-def downloadFile(stub):
-	pass
-
+def downloadFile(stub,username):
+	filename = raw_input("Enter the filename: ")
+	fileName = classeur_pb2.FileName(fileName=filename, userName=username)
+	chunk_iter = stub.DownloadFile(fileName)
+	if not os.path.exists('downloads'):
+	    try:
+	        os.makedirs('downloads')
+	    except OSError as exc: # Guard against race condition
+	        if exc.errno != errno.EEXIST:
+	            raise
+	file = codecs.open('./downloads/'+filename, 'w', encoding='latin-1')
+	for chunk in chunk_iter:
+		if chunk.chunkId==-1:
+			print("File not found!")
+			os.remove(file.name)
+			file.close()
+			return
+		elif chunk.chunkId==-2:
+			print("File Corrupted in cloud! Can not be downloaded!")
+			file.close()
+			os.remove(file.name)
+			return
+		ch_data = chunk.chunkData
+		file.write(ch_data)
+	print("Download Successful!")
+	file.close()
 
 def fileChunkIterator(file, filename, chunk_count, username):
 	filechunk = classeur_pb2.FileChunks(
-		fileName = filename, chunkId = 0, chunkData = None, userName = username)
+		fileName = filename, chunkId = -1, chunkData = None, userName = username)
 	for x in xrange(chunk_count):
 		chunk = file.read(CHUNK_SIZE)
 		filechunk.chunkId=x+1
@@ -91,9 +125,9 @@ def run():
 				elif option == 2:
 					uploadFile(stub, username)
 				elif option == 3:
-					downloadFile(stub)
+					downloadFile(stub,username)
 				elif option == 4:
-					# total size occupied
+					reportSize(stub,username)
 					pass
 				else:
 					sys.exit(0)
