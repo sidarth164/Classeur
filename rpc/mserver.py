@@ -135,23 +135,28 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 		tot_size = 0
 		filename = ''
 		username = ''
+		snodes = 0
+		snode_list = []
+		snode_iter = sNodeBinding.find()
+		for snode in snode_iter:
+			snode_list.append(snode["id"])
 		for filechunk in request_iterator:
 			filename = filechunk.fileName
 			username = filechunk.userName
 			chunk_id = filechunk.chunkId
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
-			snodes = 5
-			snode_list = [y+1 for y in xrange(snodes)]
 			print(type(chunk_data))
 			chunk_data = bytearray(chunk_data, 'latin-1')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
+			x=0
 			for id in snode_list:
 				query = {"id":id}
 				queryResult = users.find_one(query)
 				ip = queryResult['ip']
-				chunk = echunk_arr[id-1]
+				chunk = echunk_arr[x]
 				upload_chunk(ip,chunk,username,chunk_id,filename)
+				x+=1
 
 			'''
 				send echunk_arr elements to their respective snodes
@@ -233,15 +238,15 @@ class sNodeHandlerServicer(classeur_pb2_grpc.sNodeHandlerServicer):
 		SNodeId = request.id
 		query = {"id":SNodeId, "ip":ip, "port":port, "ACTIVE":True}
 		print(query)
-		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.connect((ip, port))
-		query = {}
-		query["source"]="mserver"
-		query["purpose"]="testing"
-		query["message"]="yo bro wassup?"
-		query = json.dumps(query)
-		sock.send(query + "\n")
-		sock.close()
+		# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# sock.connect((ip, port))
+		# query = {}
+		# query["source"]="mserver"
+		# query["purpose"]="testing"
+		# query["message"]="yo bro wassup?"
+		# query = json.dumps(query)
+		# sock.send(query + "\n")
+		# sock.close()
 		x=sNodeBinding.insert_one(query)
 		if x == None:
 			ack = classeur_pb2.Acknowledgement(response = False)

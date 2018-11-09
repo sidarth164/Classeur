@@ -9,7 +9,7 @@ import classeur_pb2
 import classeur_pb2_grpc
 
 HOST = ""
-PORT = "8081"
+PORT = 8081
 MSERVER_PORT = 50051
 mserver_host = ""
 
@@ -34,12 +34,6 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 
 	def handle(self):
 		data = self.rfile.readline().strip()
-		# data = data + self.rfile.read(1024)
-		# data = self.rfile.read(1024)
-		# while data:
-					# file.write(data)
-			# data = data + self.rfile.read(1024)
-		# print data
 		repsonse = json.loads(data)
 		print "{} wrote:".format(self.client_address[0])
 		print response
@@ -53,56 +47,18 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 				if not os.path.exists(folderName):
 					os.makedirs(folderName)
 				filepath = "./" + folderName + "/" + response["chunk_id"]
-				file = open(filepath, 'wb')
+				file = codecs.open(filepath, 'w', encoding='latin-1')
 				# file.write(response["chunk"])
 				data = self.rfile.read(1024)
 				while data:
 					file.write(data)
 					data = self.rfile.read(1024)
+				file.close()
 
 			elif response["purpose"] == "testing":
 				print(response["message"])
 
-
-				# # Send the uploaded ack to MServer
-				# sock = socket.socket()
-				# sock.connect((mserver_host, mserver_port))
-				# file.close()
-				# filesize = os.path.getsize("./storage/" + hash)
-
-				# query={}
-				# query["source"]="snode"
-				# query["purpose"]="uploaded"
-				# query["hash"]=hash
-				# query["filesize"]=filesize
-				# query=json.dumps(query)
-
-				# sock.send(query + "\n")
-
-				# # sock.send("snode uploaded " + hash + " " + str(filesize) + "\n")
-				# file = open("./storage/" + hash, 'r')
-				# chunk = file.read()
-				# data = ''
-				# reply = sock.recv(1024)         #this reply contains the list of snodes where the given chunk can be uploaded
-				# while reply:
-				#     data += reply
-				#     reply = sock.recv(1024)
-				# sock.close()
-
-				# #The part below needs to be modified for granular and random distribution of chunks to other snodes
-
-				# # Upload duplicated to other SNodes
-				# data = data.split(" ")
-				# index = 0
-				# snode_ips = []
-				# while index < len(data):
-				#     snode_ips += [(data[index], data[index+1])]
-				#     index += 2
-
-				# for snode in snode_ips:
-				#     upload_chunk(snode, hash, chunk)
-				# return
-
+			
 			# elif data.startswith("get", 7):
 			elif repsonse["purpose"]=="get":
 				hash = response["hash"]

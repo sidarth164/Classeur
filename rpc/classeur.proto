@@ -80,6 +80,6 @@ message Response {
 
 message SNodeDetails {
     string ip = 1;
-    string port = 2;
+    int64 port = 2;
     string id = 3;
 }

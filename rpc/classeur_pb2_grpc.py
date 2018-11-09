@@ -129,15 +129,10 @@ class sNodeHandlerStub(object):
         request_serializer=classeur__pb2.FileChunks.SerializeToString,
         response_deserializer=classeur__pb2.Acknowledgement.FromString,
         )
-    self.ReceiveFileChunks = channel.unary_stream(
-        '/classeur.sNodeHandler/ReceiveFileChunks',
-        request_serializer=classeur__pb2.ChunkDetails.SerializeToString,
-        response_deserializer=classeur__pb2.FileChunks.FromString,
-        )
-    self.Heartbeat = channel.unary_unary(
-        '/classeur.sNodeHandler/Heartbeat',
-        request_serializer=classeur__pb2.Request.SerializeToString,
-        response_deserializer=classeur__pb2.Response.FromString,
+    self.AddSNode = channel.unary_unary(
+        '/classeur.sNodeHandler/AddSNode',
+        request_serializer=classeur__pb2.SNodeDetails.SerializeToString,
+        response_deserializer=classeur__pb2.Acknowledgement.FromString,
         )
 
 
@@ -152,16 +147,10 @@ class sNodeHandlerServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def ReceiveFileChunks(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
+  def AddSNode(self, request, context):
+    """rpc Heartbeat (Request) returns (Response) {}
 
-  def Heartbeat(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -174,15 +163,10 @@ def add_sNodeHandlerServicer_to_server(servicer, server):
           request_deserializer=classeur__pb2.FileChunks.FromString,
           response_serializer=classeur__pb2.Acknowledgement.SerializeToString,
       ),
-      'ReceiveFileChunks': grpc.unary_stream_rpc_method_handler(
-          servicer.ReceiveFileChunks,
-          request_deserializer=classeur__pb2.ChunkDetails.FromString,
-          response_serializer=classeur__pb2.FileChunks.SerializeToString,
-      ),
-      'Heartbeat': grpc.unary_unary_rpc_method_handler(
-          servicer.Heartbeat,
-          request_deserializer=classeur__pb2.Request.FromString,
-          response_serializer=classeur__pb2.Response.SerializeToString,
+      'AddSNode': grpc.unary_unary_rpc_method_handler(
+          servicer.AddSNode,
+          request_deserializer=classeur__pb2.SNodeDetails.FromString,
+          response_serializer=classeur__pb2.Acknowledgement.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
