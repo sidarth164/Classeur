@@ -25,6 +25,8 @@ service sNodeHandler {
 
     rpc AddSNode(SNodeDetails) returns (Acknowledgement) {}
 
+    rpc DeleteSNode(SNodeDetails) returns (Acknowledgement) {}
+
 }
 
 message UserCredentials {

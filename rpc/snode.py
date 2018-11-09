@@ -12,41 +12,43 @@ HOST = ""
 PORT = 8081
 MSERVER_PORT = 50051
 mserver_host = ""
+sNodeId = -1
 
 size = 4*1024*1024
 snode_port = 8081
 expected_tokens = []
 
-def upload_chunk(snode, hash, chunk):
-	sock = socket.socket()
-	sock.connect((snode[0], snode_port))
-	upload={}
-	upload["source"]="snode"
-	upload["purpose"]="upload"
-	upload["hash"]="hash"
-	upload["token"]=snode[1]
-	upload["chunk"]=chunk
-	# upload = "snode upload " + hash + " " + snode[1] + "\n" + chunk
-	sock.send(upload + "\n")
-	sock.close()
+# def upload_chunk(snode, hash, chunk):
+# 	sock = socket.socket()
+# 	sock.connect((snode[0], snode_port))
+# 	upload={}
+# 	upload["source"]="snode"
+# 	upload["purpose"]="upload"
+# 	upload["hash"]="hash"
+# 	upload["token"]=snode[1]
+# 	upload["chunk"]=chunk
+# 	# upload = "snode upload " + hash + " " + snode[1] + "\n" + chunk
+# 	sock.send(upload + "\n")
+# 	sock.close()
 
 class SNodeHandler(SocketServer.StreamRequestHandler):
 
 	def handle(self):
+		print('reached here')
 		data = self.rfile.readline().strip()
-		repsonse = json.loads(data)
+		response = json.loads(data)
 		print "{} wrote:".format(self.client_address[0])
 		print response
 
 		# if data.startswith("client"):
-		if repsonse["source"]=="mserver":
+		if response["source"]=="mserver":
 			# if data.startswith("upload", 7):
-			if repsonse["purpose"]=="upload":
+			if response["purpose"]=="upload":
 				# hash = data.split(" ")[2]
 				folderName = response["username"] + "/" + response["filename"]
 				if not os.path.exists(folderName):
 					os.makedirs(folderName)
-				filepath = "./" + folderName + "/" + response["chunk_id"]
+				filepath = "./" + folderName + "/" + str(response["chunk_id"])
 				file = open(filepath, 'wb')
 				# file.write(response["chunk"])
 				data = self.rfile.read(1024)
@@ -60,7 +62,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 
 			
 			# elif data.startswith("get", 7):
-			elif repsonse["purpose"]=="get":
+			elif response["purpose"]=="get":
 				hash = response["hash"]
 				# hash = data.split(" ")[2]
 				try:
@@ -76,7 +78,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 				print("Wrong Request")
 
 		# elif data.startswith("mserver"):
-		elif repsonse["source"]=="mserver":
+		elif response["source"]=="mserver":
 			# if data.startswith("expect", 8):
 			if response["purpose"]=="expect":
 				token=response["token"]
@@ -104,6 +106,16 @@ def addSNode(stub):
 	else:
 		print("Unable to add the SNode")
 
+def deleteSNode(stub):
+	sNodeDetails = classeur_pb2.sNodeDetails(
+		ip = HOST, port = PORT, id = sNodeId)
+	ack = stub.deleteSNode(sNodeDetails)
+	if ack.response == True:
+		print("SNode %s:%s removed successfully"%(HOST,PORT))
+	else:
+		print("Unable to remove the SNode")
+
+
 def run():
 	if (len(sys.argv) < 2):
 		print("Usage: %s MainServer IP" % sys.argv[0])
@@ -115,8 +127,9 @@ def run():
 	with grpc.insecure_channel(mserver_host_port) as channel:
 		stub = classeur_pb2_grpc.sNodeHandlerStub(channel)
 		addSNode(stub)
+	return stub
 
-def serverInstance():
+def serverInstance(stub):
 
 	mserver_port = MSERVER_PORT
 	try:
@@ -136,11 +149,12 @@ def serverInstance():
 		sock.send(query + "\n")
 		# sock.send("snode drop " + str(size) + "\n")
 		sock.close()
+		deleteSNode(stub)
 
 
 if __name__ == "__main__":
-	run()
-	serverInstance()
+	stub = run()
+	serverInstance(stub)
 # if (len(sys.argv) < 2):
 #         print("Usage %s MainServerIP" % sys.argv[0])
 #         sys.exit(0)

@@ -137,7 +137,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 		username = ''
 		snodes = 0
 		snode_list = []
-		snode_iter = sNodeBinding.find()
+		snode_iter = sNodeBinding.find({"ACTIVE":True})
 		for snode in snode_iter:
 			snode_list.append(snode["id"])
 			snodes+=1
@@ -148,7 +148,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
 			print(type(chunk_data))
-			# chunk_data = bytearray(chunk_data, 'utf-8')
+			chunk_data = bytearray(chunk_data, 'utf-8')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
 			x=0
 			for id in snode_list:
@@ -245,16 +245,33 @@ class sNodeHandlerServicer(classeur_pb2_grpc.sNodeHandlerServicer):
 		# query = json.dumps(query)
 		# sock.send(query + "\n")
 		# sock.close()
-		x=sNodeBinding.insert_one(query)
+		x=sNodeBinding.find_one({"id":SNodeId})
 		if x == None:
-			ack = classeur_pb2.Acknowledgement(response = False)
+			sNodeBinding.insert_one(query)
+			ack = classeur_pb2.Acknowledgement(response = True)
 			return ack
 		else:
+			sNodeBinding.update_one(
+				{"id":SNodeId},
+				{"$set":query})
 			ack = classeur_pb2.Acknowledgement(response = True)
 			return ack
 
 	# def ReceiveFileChunks(self, request, context):
 	# 	pass
+
+	def DeleteSNode(self, request, context):
+		snode_id = request.id
+		snode = sNodeBinding.file_one({"id":snode_id})
+		if not snode:
+			ack = classeur_pb2.Acknowledgement(response = False)
+			return ack
+		else:
+			sNodeBinding.update_one(
+				{"id":snode_id},
+				{"$set": {"ACTIVE":False}})
+			ack = classeur_pb2.Acknowledgement(response = True)
+			return ack
 
 	def Heartbeat(self, request, context):
 		pass
