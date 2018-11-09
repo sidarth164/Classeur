@@ -1,4 +1,4 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 
 import itertools
 
@@ -9,9 +9,9 @@ try:
     bytearray
 except NameError:
     from array import array
-    def bytearray(obj = 0, encoding = "latin-1"): # always use Latin-1 and not UTF8 because Latin-1 maps the first 256 characters to their bytevalue equivalents. UTF8 may mangle your data (particularly at vale 128)
+    def bytearray(obj = 0, encoding = "utf-8"): # always use Latin-1 and not UTF8 because Latin-1 maps the first 256 characters to their bytevalue equivalents. UTF8 may mangle your data (particularly at vale 128)
         if isinstance(obj, str):
-            obj = [ord(ch) for ch in obj.encode("latin-1")]
+            obj = [ord(ch) for ch in obj.encode("utf-8")]
         elif isinstance(obj, int):
             obj = [0] * obj
         return array("B", obj)
@@ -660,7 +660,7 @@ class RSCodec(object):
     def encode(self, data):
         '''Encode a message (ie, add the ecc symbols) using Reed-Solomon, whatever the length of the message because we use chunking'''
         if isinstance(data, str):
-            data = bytearray(data, "latin-1")
+            data = bytearray(data, "utf-8")
         chunk_size = self.nsize - self.nsym
         enc = bytearray()
         for i in xrange(0, len(data), chunk_size):
@@ -672,7 +672,7 @@ class RSCodec(object):
         '''Repair a message, whatever its size is, by using chunking'''
         # erase_pos is a list of positions where you know (or greatly suspect at least) there is an erasure (ie, wrong character but you know it's at this position). Just input the list of all positions you know there are errors, and this method will automatically split the erasures positions to attach to the corresponding data chunk.
         if isinstance(data, str):
-            data = bytearray(data, "latin-1")
+            data = bytearray(data, "utf-8")
         dec = bytearray()
         for i in xrange(0, len(data), self.nsize):
             # Split the long message in a chunk

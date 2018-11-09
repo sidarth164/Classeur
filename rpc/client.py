@@ -43,7 +43,7 @@ def uploadFile(stub, username):
 	filepath = raw_input("Enter the file path: ")
 	filename = os.path.basename(filepath)
 	try:
-		file = codecs.open(filepath,'r', encoding='latin-1')
+		file = codecs.open(filepath,'r', encoding='utf-8')
 	except:
 		print("Unable to open file %s"%filepath)
 		return
@@ -69,7 +69,7 @@ def downloadFile(stub,username):
 	    except OSError as exc: # Guard against race condition
 	        if exc.errno != errno.EEXIST:
 	            raise
-	file = codecs.open('./downloads/'+filename, 'w', encoding='latin-1')
+	file = codecs.open('./downloads/'+filename, 'w', encoding='utf-8')
 	for chunk in chunk_iter:
 		if chunk.chunkId==-1:
 			print("File not found!")
