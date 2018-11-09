@@ -19,6 +19,11 @@ class clientHandlerStub(object):
         request_serializer=classeur__pb2.UserCredentials.SerializeToString,
         response_deserializer=classeur__pb2.Validity.FromString,
         )
+    self.LogOut = channel.unary_unary(
+        '/classeur.clientHandler/LogOut',
+        request_serializer=classeur__pb2.UserToken.SerializeToString,
+        response_deserializer=classeur__pb2.Acknowledgement.FromString,
+        )
     self.ListFiles = channel.unary_unary(
         '/classeur.clientHandler/ListFiles',
         request_serializer=classeur__pb2.UserToken.SerializeToString,
@@ -46,6 +51,13 @@ class clientHandlerServicer(object):
   """
 
   def CheckAuthentication(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def LogOut(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -87,6 +99,11 @@ def add_clientHandlerServicer_to_server(servicer, server):
           servicer.CheckAuthentication,
           request_deserializer=classeur__pb2.UserCredentials.FromString,
           response_serializer=classeur__pb2.Validity.SerializeToString,
+      ),
+      'LogOut': grpc.unary_unary_rpc_method_handler(
+          servicer.LogOut,
+          request_deserializer=classeur__pb2.UserToken.FromString,
+          response_serializer=classeur__pb2.Acknowledgement.SerializeToString,
       ),
       'ListFiles': grpc.unary_unary_rpc_method_handler(
           servicer.ListFiles,

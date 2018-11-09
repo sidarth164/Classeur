@@ -43,7 +43,7 @@ def uploadFile(stub, username):
 	filepath = raw_input("Enter the file path: ")
 	filename = os.path.basename(filepath)
 	try:
-		file = open(filepath,'rb')
+		file = codecs.open(filepath,'rb', encoding="Latin-1")
 	except:
 		print("Unable to open file %s"%filepath)
 		return
@@ -61,6 +61,7 @@ def uploadFile(stub, username):
 
 def downloadFile(stub,username):
 	filename = raw_input("Enter the filename: ")
+	filename = os.path.basename(filename)
 	fileName = classeur_pb2.FileName(fileName=filename, userName=username)
 	chunk_iter = stub.DownloadFile(fileName)
 	if not os.path.exists('downloads'):
@@ -69,7 +70,7 @@ def downloadFile(stub,username):
 	    except OSError as exc: # Guard against race condition
 	        if exc.errno != errno.EEXIST:
 	            raise
-	file = open('./downloads/'+filename, 'wb')
+	file = codecs.open('./downloads/'+filename, 'wb', encoding="Latin-1")
 	for chunk in chunk_iter:
 		if chunk.chunkId==-1:
 			print("File not found!")
@@ -95,6 +96,16 @@ def fileChunkIterator(file, filename, chunk_count, username):
 		filechunk.chunkData=chunk
 		yield filechunk
 
+def logOut(stub,username):
+	user = classeur_pb2.UserToken(username=username)
+	ack = stub.LogOut(user)
+	if ack.response:
+		print('\nSuccessfully logged out')
+		sys.exit(0)
+	else:
+		print('\nLog out unsuccessful')
+		sys.exit(1)
+
 def run():
 	if (len(sys.argv) < 2):
 		print("Usage: %s MainServer IP" % sys.argv[0])
@@ -117,20 +128,23 @@ def run():
 		if checkAuthentication(stub, username, password)==True:
 			print("Congratulations! Authentication successful")
 			while 1:
-				print("Choose any option <Enter the option number>:\n 1. List Files\n 2. Upload File\n 3. Download File\n 4. Total Size\n 5. Exit")
-				option = raw_input("Option: ")
-				option = int(option)
-				if option == 1:
-					listFiles(stub,username)
-				elif option == 2:
-					uploadFile(stub, username)
-				elif option == 3:
-					downloadFile(stub,username)
-				elif option == 4:
-					reportSize(stub,username)
-					pass
-				else:
-					sys.exit(0)
+				try:
+					print("Choose any option <Enter the option number>:\n 1. List Files\n 2. Upload File\n 3. Download File\n 4. Total Size\n 5. Exit")
+					option = raw_input("Option: ")
+					option = int(option)
+					if option == 1:
+						listFiles(stub,username)
+					elif option == 2:
+						uploadFile(stub, username)
+					elif option == 3:
+						downloadFile(stub,username)
+					elif option == 4:
+						reportSize(stub,username)
+						pass
+					else:
+						logOut(stub,username)
+				except:
+					logOut(stub,username)
 		else:
 			print("Incorrect credentials! Please try again.")
 		
