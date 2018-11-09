@@ -134,6 +134,11 @@ class sNodeHandlerStub(object):
         request_serializer=classeur__pb2.SNodeDetails.SerializeToString,
         response_deserializer=classeur__pb2.Acknowledgement.FromString,
         )
+    self.DeleteSNode = channel.unary_unary(
+        '/classeur.sNodeHandler/DeleteSNode',
+        request_serializer=classeur__pb2.SNodeDetails.SerializeToString,
+        response_deserializer=classeur__pb2.Acknowledgement.FromString,
+        )
 
 
 class sNodeHandlerServicer(object):
@@ -155,6 +160,13 @@ class sNodeHandlerServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def DeleteSNode(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_sNodeHandlerServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -165,6 +177,11 @@ def add_sNodeHandlerServicer_to_server(servicer, server):
       ),
       'AddSNode': grpc.unary_unary_rpc_method_handler(
           servicer.AddSNode,
+          request_deserializer=classeur__pb2.SNodeDetails.FromString,
+          response_serializer=classeur__pb2.Acknowledgement.SerializeToString,
+      ),
+      'DeleteSNode': grpc.unary_unary_rpc_method_handler(
+          servicer.DeleteSNode,
           request_deserializer=classeur__pb2.SNodeDetails.FromString,
           response_serializer=classeur__pb2.Acknowledgement.SerializeToString,
       ),

@@ -30,7 +30,7 @@ files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
 def encode_chunk(chunk,n):
-	enc_chunk=rs.encode(chunk).decode('utf-8')
+	enc_chunk=rs.encode(chunk)#.decode('utf-8')
 	# Uncomment below line
 	echunk_arr=['']*n
 	echunk_length=[0]*n
@@ -76,7 +76,7 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 		e+=255
 
 	try:
-		decoded=rs.decode(enc_chunk,epos_arr).decode('utf-8')
+		decoded=rs.decode(enc_chunk,epos_arr)#.decode('utf-8')
 		print('decode successful')
 	except:
 		print('decode failure')
@@ -137,7 +137,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 		username = ''
 		snodes = 0
 		snode_list = []
-		snode_iter = sNodeBinding.find()
+		snode_iter = sNodeBinding.find({"ACTIVE":True})
 		for snode in snode_iter:
 			snode_list.append(snode["id"])
 			snodes+=1
@@ -245,16 +245,33 @@ class sNodeHandlerServicer(classeur_pb2_grpc.sNodeHandlerServicer):
 		# query = json.dumps(query)
 		# sock.send(query + "\n")
 		# sock.close()
-		x=sNodeBinding.insert_one(query)
+		x=sNodeBinding.find_one({"id":SNodeId})
 		if x == None:
-			ack = classeur_pb2.Acknowledgement(response = False)
+			sNodeBinding.insert_one(query)
+			ack = classeur_pb2.Acknowledgement(response = True)
 			return ack
 		else:
+			sNodeBinding.update_one(
+				{"id":SNodeId},
+				{"$set":query})
 			ack = classeur_pb2.Acknowledgement(response = True)
 			return ack
 
 	# def ReceiveFileChunks(self, request, context):
 	# 	pass
+
+	def DeleteSNode(self, request, context):
+		snode_id = request.id
+		snode = sNodeBinding.file_one({"id":snode_id})
+		if not snode:
+			ack = classeur_pb2.Acknowledgement(response = False)
+			return ack
+		else:
+			sNodeBinding.update_one(
+				{"id":snode_id},
+				{"$set": {"ACTIVE":False}})
+			ack = classeur_pb2.Acknowledgement(response = True)
+			return ack
 
 	def Heartbeat(self, request, context):
 		pass
