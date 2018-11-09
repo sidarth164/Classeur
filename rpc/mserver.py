@@ -30,7 +30,7 @@ files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
 def encode_chunk(chunk,n):
-	enc_chunk=rs.encode(chunk).decode('utf-8')
+	enc_chunk=rs.encode(chunk)#.decode('utf-8')
 	# Uncomment below line
 	echunk_arr=['']*n
 	echunk_length=[0]*n
@@ -76,7 +76,7 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 		e+=255
 
 	try:
-		decoded=rs.decode(enc_chunk,epos_arr).decode('utf-8')
+		decoded=rs.decode(enc_chunk,epos_arr)#.decode('utf-8')
 		print('decode successful')
 	except:
 		print('decode failure')
@@ -148,7 +148,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
 			print(type(chunk_data))
-			chunk_data = bytearray(chunk_data, 'utf-8')
+			# chunk_data = bytearray(chunk_data, 'utf-8')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
 			x=0
 			for id in snode_list:

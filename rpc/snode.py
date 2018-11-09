@@ -47,7 +47,7 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 				if not os.path.exists(folderName):
 					os.makedirs(folderName)
 				filepath = "./" + folderName + "/" + response["chunk_id"]
-				file = codecs.open(filepath, 'w', encoding='utf-8')
+				file = open(filepath, 'wb')
 				# file.write(response["chunk"])
 				data = self.rfile.read(1024)
 				while data:
