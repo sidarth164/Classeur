@@ -20,9 +20,9 @@ service sNodeHandler {
 
     rpc SendFileChunks(stream FileChunks) returns (Acknowledgement) {}
 
-    rpc ReceiveFileChunks(ChunkDetails) returns (stream FileChunks) {}
+    //rpc Heartbeat (Request) returns (Response) {}
 
-    rpc Heartbeat (Request) returns (Response) {}
+    rpc AddSNode(SNodeDetails) returns (Acknowledgement) {}
 
 }
 
@@ -70,4 +70,10 @@ message Request {
 
 message Response {
     string response = 2;
+}
+
+message SNodeDetails {
+    string ip = 1;
+    string port = 2;
+    string id = 3;
 }

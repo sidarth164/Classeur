@@ -79,7 +79,7 @@ def run():
 		username = raw_input("Please enter your username: ")
 		password = getpass.getpass('Password: ')
 
-		TODO: uncomment below code after testing is complete!
+		# TODO: uncomment below code after testing is complete!
 		if checkAuthentication(stub, username, password)==True:
 			print("Congratulations! Authentication successful")
 			while 1:
@@ -89,7 +89,7 @@ def run():
 				if option == 1:
 					listFiles(stub,username)
 				elif option == 2:
-					uploadFile(stub)
+					uploadFile(stub, username)
 				elif option == 3:
 					downloadFile(stub)
 				elif option == 4:

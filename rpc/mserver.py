@@ -3,6 +3,7 @@ from concurrent import futures
 
 import grpc
 import time
+import socket
 
 import pymongo
 from pymongo import MongoClient
@@ -20,7 +21,7 @@ rs = RSCodec(51)
 client = MongoClient("mongodb://localhost:27017/")
 db = client["classeur"]
 users = db["users"]
-sNodeData = db["sNodeData"]
+sNodeBinding = db["sNodeBinding"]  # {"id": id, "ip":ip, "ACTIVE"=True}
 files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
@@ -70,6 +71,19 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 
 	return rs.decode(enc_chunk,epos_arr)
 
+def upload_chunk(snode, chunk,username,chunk_id,filename):
+    sock = socket.socket()
+    sock.connect((snode, snode_port))
+    upload={}
+    upload["source"]="mserver" #change this to mserver here and in snode.py
+    upload["purpose"]="upload"
+    upload["username"]=username
+    upload["chunk_id"]=chunk_id
+    upload["filename"]=filename
+    upload=json.dumps(upload)
+    sock.send(upload + "\n" + chunk)
+    sock.close()
+
 # Client Service Handler
 class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 
@@ -110,7 +124,13 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			print(type(chunk_data))
 			chunk_data = bytearray(chunk_data, 'utf-8')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
-			
+			for id in snode_list:
+				query = {"id":id}
+				queryResult = users.find_one(query)
+				ip = queryResult['ip']
+				chunk = echunk_arr[id-1]
+				upload_chunk(ip,chunk,username,chunk_id,filename)
+
 			'''
 				send echunk_arr elements to their respective snodes
 			'''
@@ -153,8 +173,31 @@ class sNodeHandlerServicer(classeur_pb2_grpc.sNodeHandlerServicer):
 	def SendFileChunks(self, request_iterator, context):
 		pass
 
-	def ReceiveFileChunks(self, request, context):
-		pass
+	def AddSNode(self, request, context):
+		ip = request.ip
+		port = request.port
+		SNodeId = request.id
+		query = {"id":SNodeId, "ip":ip, "port":port, "ACTIVE":True}
+		print(query)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect((ip, port))
+		query = {}
+		query["source"]="mserver"
+		query["purpose"]="testing"
+		query["message"]="yo bro wassup?"
+		query = json.dumps(query)
+		sock.send(query + "\n")
+		sock.close()
+		x=sNodeBinding.insert_one(query)
+		if x == None:
+			ack = classeur_pb2.Acknowledgement(response = False)
+			return ack
+		else:
+			ack = classeur_pb2.Acknowledgement(response = True)
+			return ack
+
+	# def ReceiveFileChunks(self, request, context):
+	# 	pass
 
 	def Heartbeat(self, request, context):
 		pass
