@@ -29,7 +29,7 @@ files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
 def encode_chunk(chunk,n):
-	enc_chunk=rs.encode(chunk)
+	enc_chunk=rs.encode(chunk).decode('latin-1')
 	# Uncomment below line
 	echunk_arr=['']*n
 	echunk_length=[0]*n
