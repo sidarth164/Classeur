@@ -30,7 +30,7 @@ files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
 def encode_chunk(chunk,n):
-	enc_chunk=rs.encode(chunk).decode('latin-1')
+	enc_chunk=rs.encode(chunk).decode('utf-8')
 	# Uncomment below line
 	echunk_arr=['']*n
 	echunk_length=[0]*n
@@ -76,7 +76,7 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 		e+=255
 
 	try:
-		decoded=rs.decode(enc_chunk,epos_arr).decode('latin-1')
+		decoded=rs.decode(enc_chunk,epos_arr).decode('utf-8')
 		print('decode successful')
 	except:
 		print('decode failure')
@@ -84,7 +84,7 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 
 	return decoded
 
-def upload_chunk(snode, chunk,username,chunk_id,filename):
+def upload_chunk(snode,snode_port,chunk,username,chunk_id,filename):
     sock = socket.socket()
     sock.connect((snode, snode_port))
     upload={}
@@ -140,6 +140,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 		snode_iter = sNodeBinding.find()
 		for snode in snode_iter:
 			snode_list.append(snode["id"])
+			snodes+=1
 		for filechunk in request_iterator:
 			filename = filechunk.fileName
 			username = filechunk.userName
@@ -147,20 +148,17 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
 			print(type(chunk_data))
-			chunk_data = bytearray(chunk_data, 'latin-1')
+			chunk_data = bytearray(chunk_data, 'utf-8')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
 			x=0
 			for id in snode_list:
 				query = {"id":id}
-				queryResult = users.find_one(query)
+				queryResult = sNodeBinding.find_one(query)
 				ip = queryResult['ip']
+				port = queryResult['port']
 				chunk = echunk_arr[x]
-				upload_chunk(ip,chunk,username,chunk_id,filename)
+				upload_chunk(ip,port,chunk,username,chunk_id,filename)
 				x+=1
-
-			'''
-				send echunk_arr elements to their respective snodes
-			'''
 
 			file = files.find_one({"name":filename,"user":username})
 			if not file:
