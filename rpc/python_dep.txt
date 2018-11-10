@@ -6,7 +6,8 @@ hurry.filesize
 codecs
 virtualenv
 grpcio
-grpcio-tools googleapis-common-protos
+grpcio-tools
+googleapis-common-protos
 time
 socket
 pymongo
