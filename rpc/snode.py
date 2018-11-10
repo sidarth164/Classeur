@@ -7,12 +7,13 @@ import SocketServer
 import grpc
 import classeur_pb2
 import classeur_pb2_grpc
+import codecs
 
 HOST = ""
 PORT = 8081
 MSERVER_PORT = 50051
 mserver_host = ""
-sNodeId = -1
+sNodeId = ""
 
 size = 4*1024*1024
 snode_port = 8081
@@ -49,11 +50,12 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 				if not os.path.exists(folderName):
 					os.makedirs(folderName)
 				filepath = "./" + folderName + "/" + str(response["chunk_id"])
-				file = open(filepath, 'wb')
+				file = codecs.open(filepath, 'wb',encoding='Latin-1')
 				# file.write(response["chunk"])
 				data = self.rfile.read(1024)
 				while data:
-					file.write(data)
+					wdata = data.decode('Latin-1')
+					file.write(wdata)
 					data = self.rfile.read(1024)
 				file.close()
 
@@ -63,27 +65,31 @@ class SNodeHandler(SocketServer.StreamRequestHandler):
 			
 			# elif data.startswith("get", 7):
 			elif response["purpose"]=="get":
-				hash = response["hash"]
+				# hash = response["hash"]
 				# hash = data.split(" ")[2]
+				folderName=''
 				try:
-					file = open("./storage/" + hash, 'r')
+					folderName = response["username"] + "/" + response["filename"]
+					file = codecs.open("./" + folderName + "/" +response["chunk_id"], 'rb', encoding='Latin-1')
 					data = file.read()
-					self.wfile.write("OK " + data)
+					self.wfile.write("OK " + data.encode('Latin-1'))
 					file.close()
 				except:
+					raise
+					print("file %s not found!"%(folderName+'/'+response['chunk_id']))
 					self.wfile.write("ERR1")
 				return
 
 			else:
 				print("Wrong Request")
 
-		# elif data.startswith("mserver"):
-		elif response["source"]=="mserver":
-			# if data.startswith("expect", 8):
-			if response["purpose"]=="expect":
-				token=response["token"]
-				# token = data.split(" ")[2]
-				expected_tokens.append(token)
+		# # elif data.startswith("mserver"):
+		# elif response["source"]=="mserver":
+		# 	# if data.startswith("expect", 8):
+		# 	if response["purpose"]=="expect":
+		# 		token=response["token"]
+		# 		# token = data.split(" ")[2]
+		# 		expected_tokens.append(token)
 
 		else:
 			print("Wrong Request")
@@ -93,6 +99,7 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 	pass
 
 def addSNode(stub):
+	global sNodeId, HOST
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.connect(("8.8.8.8", 80))
 	HOST = s.getsockname()[0]
@@ -107,13 +114,17 @@ def addSNode(stub):
 		print("Unable to add the SNode")
 
 def deleteSNode(stub):
-	sNodeDetails = classeur_pb2.sNodeDetails(
+	sNodeDetails = classeur_pb2.SNodeDetails(
 		ip = HOST, port = PORT, id = sNodeId)
-	ack = stub.deleteSNode(sNodeDetails)
+	try:
+		ack = stub.DeleteSNode(sNodeDetails)
+	except:
+		print("\nmserver is down!")
+		return
 	if ack.response == True:
-		print("SNode %s:%s removed successfully"%(HOST,PORT))
+		print("\nSNode %s:%s removed successfully"%(HOST,PORT))
 	else:
-		print("Unable to remove the SNode")
+		print("\nUnable to remove the SNode")
 
 
 def run():
@@ -127,7 +138,7 @@ def run():
 	with grpc.insecure_channel(mserver_host_port) as channel:
 		stub = classeur_pb2_grpc.sNodeHandlerStub(channel)
 		addSNode(stub)
-	return stub
+		serverInstance(stub)
 
 def serverInstance(stub):
 
@@ -137,24 +148,23 @@ def serverInstance(stub):
 		print "you reached till here!"
 		server.serve_forever()
 	except:
-		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.connect((mserver_host, mserver_port))
+		# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# sock.connect((mserver_host, mserver_port))
 
-		query={}
-		query["source"]="snode"
-		query["purpose"]="drop"
-		query["storageSpace"]=size
-		query=json.dumps(query)
+		# query={}
+		# query["source"]="snode"
+		# query["purpose"]="drop"
+		# query["storageSpace"]=size
+		# query=json.dumps(query)
 
-		sock.send(query + "\n")
+		# sock.send(query + "\n")
 		# sock.send("snode drop " + str(size) + "\n")
-		sock.close()
+		# sock.close()
 		deleteSNode(stub)
-
-
+		
 if __name__ == "__main__":
-	stub = run()
-	serverInstance(stub)
+	run()
+	# serverInstance()
 # if (len(sys.argv) < 2):
 #         print("Usage %s MainServerIP" % sys.argv[0])
 #         sys.exit(0)

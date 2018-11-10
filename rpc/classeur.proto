@@ -7,6 +7,8 @@ service clientHandler {
 
     rpc CheckAuthentication(UserCredentials) returns (Validity) {}
 
+    rpc LogOut(UserToken) returns (Acknowledgement) {}
+
     rpc ListFiles(UserToken) returns (FileList) {}
 
     rpc UploadFile(stream FileChunks) returns (Acknowledgement) {}

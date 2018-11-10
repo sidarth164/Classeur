@@ -30,7 +30,7 @@ files = db["files"]
 
 # Reed-Solomon Encoding-Decoding Functions
 def encode_chunk(chunk,n):
-	enc_chunk=rs.encode(chunk)#.decode('utf-8')
+	enc_chunk=rs.encode(chunk).decode('Latin-1')
 	# Uncomment below line
 	echunk_arr=['']*n
 	echunk_length=[0]*n
@@ -75,27 +75,59 @@ def decode_chunk(echunk_arr,echunk_length,csize_div,n):
 			inc[x]+=csize_div[x]
 		e+=255
 
+	# decoded=rs.decode(enc_chunk,epos_arr).decode('Latin-1')
 	try:
-		decoded=rs.decode(enc_chunk,epos_arr)#.decode('utf-8')
+		decoded=rs.decode(enc_chunk,epos_arr).decode('Latin-1')
 		print('decode successful')
 	except:
 		print('decode failure')
+		raise
 		decoded=None
 
 	return decoded
 
 def upload_chunk(snode,snode_port,chunk,username,chunk_id,filename):
-    sock = socket.socket()
-    sock.connect((snode, snode_port))
-    upload={}
-    upload["source"]="mserver" #change this to mserver here and in snode.py
-    upload["purpose"]="upload"
-    upload["username"]=username
-    upload["chunk_id"]=chunk_id
-    upload["filename"]=filename
-    upload=json.dumps(upload)
-    sock.send(upload + "\n" + chunk)
-    sock.close()
+	sock = socket.socket()
+	sock.connect((snode, snode_port))
+	upload={}
+	upload["source"]="mserver" #change this to mserver here and in snode.py
+	upload["purpose"]="upload"
+	upload["username"]=username
+	upload["chunk_id"]=chunk_id
+	upload["filename"]=filename
+	upload=json.dumps(upload)
+	sock.send(upload + "\n" + chunk.encode('Latin-1'))
+	sock.close()
+
+def download_chunk(snode,snode_port,username,chunk_id,filename):
+	sock = socket.socket()
+	try:
+		sock.connect((snode,snode_port))
+	except:
+		return ''
+	download={}
+	download["source"]="mserver"
+	download["purpose"]="get"
+	download["username"]=username
+	download["chunk_id"]=chunk_id
+	download["filename"]=filename
+	download=json.dumps(download)
+	sock.send(download+'\n')
+	
+	reply = sock.recv(1024)
+	if reply.startswith("OK"):
+		reply = reply[3:]
+	else:
+		return ''
+	data = ''
+	if reply == "":
+		reply = sock.recv(1024)
+	while reply:
+		data += reply
+		reply = sock.recv(1024)
+
+	sock.close()
+	return data.decode('Latin-1')
 
 # Client Service Handler
 class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
@@ -105,14 +137,21 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 
 
 	def CheckAuthentication(self, request, context):
-		query = { "username" : request.username, "password" : request.password }
-		print(query)
-		queryResult = users.find_one(query)
+		queryResult = users.find_one({"username":request.username,"password":request.password,"logged_in":False})
 		print(queryResult)
 		if queryResult == None:
 			return classeur_pb2.Validity(vailidity=False)
 		else:
+			users.update_one({"username":request.username},{'$set': {'logged_in':True}})
 			return classeur_pb2.Validity(vailidity=True)
+
+	def LogOut(self, request, context):
+		username = request.username
+		try:
+			users.update_one({"username":username},{"$set":{"logged_in":False}})
+			return classeur_pb2.Acknowledgement(response=True)
+		except:
+			return classeur_pb2.Acknowledgement(response=False)
 
 	def ListFiles(self, request, context):
 		username = request.username
@@ -148,7 +187,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
 			print(type(chunk_data))
-			chunk_data = bytearray(chunk_data, 'utf-8')
+			chunk_data = bytearray(chunk_data, 'Latin-1')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
 			x=0
 			for id in snode_list:
@@ -176,12 +215,16 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 					{'$push':{'files_owned':filename},
 					'$inc':{'total_size':tot_size}})
 			else:
-				chunk={'size':echunk_length,'div':csize_div}
-				files.update_one(
-					{'name':filename,'user':username},
-					{'$set':
-						{'chunk.'+str(chunk_id):chunk, 'size':tot_size, 'chunk_count':chunk_id, 'snodes':snode_list}
-					})
+				files.delete_one({"name":filename,"user":username})
+				file={}
+				file["name"]=filename
+				file["user"]=username
+				file["size"]=tot_size
+				file["chunk_count"]=chunk_id
+				file["snodes"]=snode_list
+				file["chunk"]={}
+				file["chunk"][str(chunk_id)]={'size':echunk_length,'div':csize_div}
+				files.insert_one(file)
 
 			print(echunk_length)
 			print(csize_div)
@@ -195,9 +238,12 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 
 		filename = request.fileName
 		username = request.userName
-		snodes = 5
-		snode_list = [y+1 for y in xrange(snodes)]
+		# snodes = 5
+		# snode_list = [y+1 for y in xrange(snodes)]
 		file_data = files.find_one({'name':filename,'user':username})
+		snode_list = file_data["snodes"]
+		snodes = len(snode_list)
+		echunk_arr=[]
 		file_chunk = classeur_pb2.FileChunks(
 			fileName = filename, chunkId=-1, chunkData=None, userName=username)
 		if not file_data:
@@ -206,7 +252,22 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 				yield file_chunk
 		else:
 			for chunk_id in file_data["chunk"]:
-				
+				for snode in snode_list:
+					query = {"id":snode}
+					queryResult = sNodeBinding.find_one(query)
+					ip = queryResult['ip']
+					port = queryResult['port']
+					active = queryResult['ACTIVE']
+					if active:
+						echunk = download_chunk(ip,port,username,chunk_id,filename)
+						echunk = bytearray(echunk, 'Latin-1')
+						if not echunk:
+							print('echunk is None')
+						elif echunk=='':
+							print('echunk is ""')
+						echunk_arr.append(echunk)
+					else:
+						echunk_arr.append('')
 				''' 
 				Collect the chunks from all the snodes. If a node is down assume its chunk as null string
 				echunk_arr => list of chunks
@@ -262,7 +323,7 @@ class sNodeHandlerServicer(classeur_pb2_grpc.sNodeHandlerServicer):
 
 	def DeleteSNode(self, request, context):
 		snode_id = request.id
-		snode = sNodeBinding.file_one({"id":snode_id})
+		snode = sNodeBinding.find_one({"id":snode_id})
 		if not snode:
 			ack = classeur_pb2.Acknowledgement(response = False)
 			return ack
@@ -289,6 +350,8 @@ def serve():
 			print("anyone there?")
 			time.sleep(_ONE_DAY_IN_SECONDS)
 	except KeyboardInterrupt:
+		# remove all the snodes: make them inactive
+		snode_list = sNodeBinding.update({"ACTIVE":True}, {"$set":{"ACTIVE":False}})
 		server.stop(0)
 
 if __name__ == '__main__':
