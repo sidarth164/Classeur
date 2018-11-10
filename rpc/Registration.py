@@ -18,5 +18,5 @@ if __name__=="__main__":
 		else:
 			print("This username is already in use!\nPlease choose again\n")
 
-	users.insert_one({'username':username, 'password':password, 'files_owned':[], 'total_size':0})
+	users.insert_one({'username':username, 'password':password, 'files_owned':[], 'total_size':0, 'logged_in':False})
 	print('Registration Successful!')
