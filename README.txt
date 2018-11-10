@@ -39,13 +39,14 @@ Run the Demo:
 Now open two terminals with the virtual environment 'grpcDemo' activated.
 
 In one terminal, run the server:
-$ python read_fileSection_server.py
+$ python mserver.py
 
 In the other terminal, run the client:
-$ python read_fileSection_client.py
+$ python client.py <MServer IP>
 
-*NOTE: The 'large' file for testing the program is hardcoded in the code and kept at the location: "./files/stdio.h"
+In another terminal, run the storage server
+$ python snode.py <MServer IP>
 
-grpc Reference Docs:
---------------
-https://grpc.io/docs/guides/index.html
+Build a docker container:
+------------------------
+sudo docker build –t classeur:snode ~/Classeur/

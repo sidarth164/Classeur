@@ -148,6 +148,7 @@ def serverInstance(stub):
 		print "you reached till here!"
 		server.serve_forever()
 	except:
+		# raise
 		# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		# sock.connect((mserver_host, mserver_port))
 

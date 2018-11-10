@@ -186,7 +186,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			chunk_id = filechunk.chunkId
 			chunk_data = filechunk.chunkData
 			tot_size += len(chunk_data)
-			print(type(chunk_data))
+			print(chunk_id)
 			chunk_data = bytearray(chunk_data, 'Latin-1')
 			echunk_arr,echunk_length,csize_div=encode_chunk(chunk_data, snodes)
 			x=0
@@ -215,6 +215,7 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 					{'$push':{'files_owned':filename},
 					'$inc':{'total_size':tot_size}})
 			else:
+				file_old = file
 				files.delete_one({"name":filename,"user":username})
 				file={}
 				file["name"]=filename
@@ -223,6 +224,8 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 				file["chunk_count"]=chunk_id
 				file["snodes"]=snode_list
 				file["chunk"]={}
+				for chunkid_old in file_old["chunk"]:
+					file["chunk"][chunkid_old]=file_old["chunk"][chunkid_old]
 				file["chunk"][str(chunk_id)]={'size':echunk_length,'div':csize_div}
 				files.insert_one(file)
 
@@ -243,7 +246,6 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 		file_data = files.find_one({'name':filename,'user':username})
 		snode_list = file_data["snodes"]
 		snodes = len(snode_list)
-		echunk_arr=[]
 		file_chunk = classeur_pb2.FileChunks(
 			fileName = filename, chunkId=-1, chunkData=None, userName=username)
 		if not file_data:
@@ -251,7 +253,9 @@ class clientHandlerServicer(classeur_pb2_grpc.clientHandlerServicer):
 			for x in range(1):
 				yield file_chunk
 		else:
-			for chunk_id in file_data["chunk"]:
+			for ch_id in xrange(file_data["chunk_count"]):
+				echunk_arr=[]
+				chunk_id=str(ch_id+1)
 				for snode in snode_list:
 					query = {"id":snode}
 					queryResult = sNodeBinding.find_one(query)
@@ -351,7 +355,8 @@ def serve():
 			time.sleep(_ONE_DAY_IN_SECONDS)
 	except KeyboardInterrupt:
 		# remove all the snodes: make them inactive
-		snode_list = sNodeBinding.update({"ACTIVE":True}, {"$set":{"ACTIVE":False}})
+		snode_list = sNodeBinding.update_many({"ACTIVE":True}, {"$set":{"ACTIVE":False}})
+		users.update_many({"logged_in":True},{"$set":{"logged_in":False}})
 		server.stop(0)
 
 if __name__ == '__main__':
