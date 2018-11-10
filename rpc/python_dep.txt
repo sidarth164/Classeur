@@ -1,0 +1,13 @@
+getpass
+sys
+json
+os
+hurry.filesize
+codecs
+virtualenv
+grpcio
+grpcio-tools googleapis-common-protos
+time
+socket
+pymongo
+SocketServer
